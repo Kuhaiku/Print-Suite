@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Criador de Mosaico</title>
+    <link rel="stylesheet" href="/css/global.css">
+    <link rel="stylesheet" href="/css/tools.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+</head>
+<body>
+
+    <header class="main-header">
+        <h1>Criador de Mosaico</h1>
+    </header>
+
+    <nav class="main-nav">
+        <ul>
+            <li><a href="/">Página Inicial</a></li>
+        </ul>
+    </nav>
+
+    <main class="content-container">
+        <div class="tool-content">
+            <div class="controls-section">
+                <h2>1. Carregue sua imagem</h2>
+                <input type="file" id="image-upload" accept="image/*">
+            </div>
+
+            <div class="controls-section">
+                <h2>2. Defina o tamanho final</h2>
+                <div class="options-group">
+                    <label for="final-width">Largura (cm):</label>
+                    <input type="number" id="final-width" placeholder="Ex: 50" min="10">
+                    <label for="final-height">Altura (cm):</label>
+                    <input type="number" id="final-height" placeholder="Ex: 60" min="10">
+                </div>
+            </div>
+
+            <div class="controls-section">
+                <h2>3. Escolha o papel e a orientação</h2>
+                <div class="options-group">
+                    <label for="paper-size">Tamanho do Papel:</label>
+                    <select id="paper-size">
+                        <option value="A4" selected>A4 (21 x 29.7cm)</option>
+                        <option value="A3">A3 (29.7 x 42cm)</option>
+                    </select>
+                    <label for="orientation">Orientação:</label>
+                    <select id="orientation">
+                        <option value="portrait" selected>Retrato</option>
+                        <option value="landscape">Paisagem</option>
+                    </select>
+                </div>
+                <button id="calculate-button" class="action-button">Calcular Mosaico</button>
+            </div>
+
+            <div id="preview-section" class="output-section" style="display: none;">
+                <h2>4. Pré-visualização</h2>
+                <div id="preview-grid" class="preview-grid-container"></div>
+                <button id="save-button" class="action-button">Salvar Mosaico (ZIP)</button>
+            </div>
+        </div>
+    </main>
+    
+    <script src="/js/mosaico.js" defer></script>
+</body>
+</html>
