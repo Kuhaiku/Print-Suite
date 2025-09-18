@@ -9,7 +9,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Instala as dependências do projeto
-RUN npm install
+RUN npm install express
 
 # Copia o restante dos arquivos da sua aplicação
 COPY . .
