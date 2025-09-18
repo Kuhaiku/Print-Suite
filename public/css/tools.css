@@ -54,3 +54,254 @@
     max-width: 100%; /* Limita a largura ao container */
     height: 500px;
 }
+
+/* Estilos para a ferramenta Polaroid */
+.polaroid {
+    width: 250px;
+    height: 300px;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    margin: 10px;
+    padding-bottom: 50px; /* Margem inferior para a área de texto/assinatura */
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    position: relative;
+    cursor: grab;
+}
+
+.polaroid-image-frame {
+    width: 200px;
+    height: 200px;
+    overflow: hidden;
+    position: relative;
+    border: 1px solid #000;
+    margin-top: 20px;
+}
+
+.polaroid-image-frame img {
+    position: absolute;
+    transform-origin: center center;
+    width: 100%;
+    height: auto;
+    cursor: grab;
+}
+
+/* Estilos para o Modal */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 100;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.7);
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 5% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+    max-width: 700px;
+    border-radius: 8px;
+    position: relative;
+}
+
+.close-button {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close-button:hover,
+.close-button:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.image-crop-container {
+    width: 100%;
+    max-height: 500px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Adicione ou modifique estes estilos para a ferramenta Polaroid */
+.polaroid {
+    width: 250px;
+    height: 350px; /* Aumentado para acomodar a margem e o texto */
+    background-color: #fff;
+    border: 1px solid #ccc;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    margin: 10px;
+    padding-bottom: 70px; /* Margem inferior maior */
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    position: relative;
+    cursor: grab;
+}
+
+.polaroid-image-frame {
+    width: 200px;
+    height: 200px;
+    overflow: hidden;
+    position: relative;
+    border: 1px solid #000;
+    margin-top: 20px;
+    cursor: pointer; /* Adicionado para indicar que é clicável */
+}
+
+.polaroid-image-frame img {
+    position: absolute;
+    transform-origin: center center;
+    width: 100%;
+    height: auto;
+    cursor: grab;
+}
+
+/* Adicione ou modifique estes estilos para a ferramenta Polaroid */
+#pagesContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.a4-page {
+    width: 29.7cm; /* A4 em paisagem */
+    height: 21.0cm;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    gap: 10px;
+    padding: 10px;
+    margin: 20px 0;
+    background-color: #fff;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.polaroid {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    position: relative;
+    padding: 10px;
+}
+
+.image-container {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+    position: relative;
+    border: 0.5px solid #adadad;
+}
+
+.image-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    cursor: grab;
+}
+
+/* Estilos para a legenda da Polaroid */
+.polaroid-caption {
+    width: 90%; /* Ocupa 90% da largura da polaroid */
+    margin-top: 5px;
+    border: none; /* Remove a borda */
+    text-align: center;
+    font-family: 'Arial', sans-serif;
+    padding: 5px 0;
+    
+}
+
+/* Sobrescreve a regra global para o campo de legenda */
+input.polaroid-caption {
+    border: none;
+    border-top: none; /* Você pode usar a variável aqui */
+}
+/* Adicione este código no final do seu arquivo tools.css */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 100;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.7);
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 5% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+    max-width: 700px;
+    border-radius: 8px;
+    position: relative;
+}
+
+.close-button {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close-button:hover,
+.close-button:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.image-crop-container {
+    width: 100%;
+    max-height: 500px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+/* Modifique as propriedades da classe .a4-page e .polaroid */
+.a4-page {
+    width: 29.7cm;
+    height: 21.0cm;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    gap: 10px;
+    padding: 10px;
+    margin: 20px 0;
+    background-color: #FFFFFF; /* Garante que o fundo da página seja branco */
+    box-shadow: none; /* Remove a sombra da página */
+}
+
+.polaroid {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: #FFFFFF; /* Garante que o fundo da polaroid seja branco */
+    border: 1px solid #ccc;
+    box-shadow: none; /* Remove a sombra da polaroid */
+    position: relative;
+    padding: 10px;
+}
+input.polaroid-caption {
+    border: none;
+    border-top: none; /* Você pode usar a variável aqui */
+}
