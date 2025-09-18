@@ -4,15 +4,17 @@ FROM node:18-alpine
 # Define o diretório de trabalho no container
 WORKDIR /app
 
-# Copia os arquivos de dependência e instala-as
-# Isso otimiza o cache do Docker, já que as dependências raramente mudam
+# Copia os arquivos de dependência (package.json e package-lock.json)
+# Isso permite que o Docker otimize o cache para esta etapa
 COPY package*.json ./
+
+# Instala as dependências do projeto
 RUN npm install
 
-# Copia o restante dos arquivos da aplicação
+# Copia o restante dos arquivos da sua aplicação
 COPY . .
 
-# Expõe a porta em que o aplicativo vai rodar (a mesma do seu server.js)
+# Expõe a porta em que a aplicação vai rodar
 EXPOSE 3000
 
 # Comando para iniciar o servidor
