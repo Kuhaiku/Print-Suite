@@ -1,0 +1,13 @@
+{
+  "name": "print-suite",
+  "version": "1.0.0",
+  "description": "Print Suite é uma plataforma SaaS (Software as a Service) projetada para otimizar e automatizar tarefas diárias de empresas no setor gráfico. Nosso objetivo é fornecer um conjunto de ferramentas online, acessíveis por meio de uma assinatura mensal, que simplificam o processo de impressão, desde a criação de layouts complexos até a preparação de arquivos para impressão. A cobrança é gerenciada através de um sistema de login e assinatura, garantindo acesso exclusivo às funcionalidades para os usuários pagantes.",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
