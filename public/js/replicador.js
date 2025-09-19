@@ -3,6 +3,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const imageCardsContainer = document.getElementById('image-cards-container');
     const replicateButton = document.getElementById('replicate-button');
     const paperSizeSelect = document.getElementById('paper-size');
+    const printPreviewContainer = document.getElementById('print-canvas-container');
+    const paginationControls = document.getElementById('pagination-controls');
+    const prevPageButton = document.getElementById('prev-page');
+    const nextPageButton = document.getElementById('next-page');
+    const pageInfo = document.getElementById('page-info');
+    const downloadButton = document.getElementById('download-button');
 
     const modal = document.getElementById('modal');
     const modalImage = document.getElementById('modal-image');
@@ -11,6 +17,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let cropper;
     let currentCardToEdit = null;
+    let finalCanvases = [];
+    let currentPageIndex = 0;
 
     const dpi = 300;
     const mmToPx = (mm) => mm * dpi / 25.4;
@@ -57,8 +65,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 <input type="number" id="round-${cardId}" class="image-round-percent" min="0" max="50" value="0" />
             </div>
             <div style="display: flex; align-items: center; gap: 10px;">
-                <label for="border-${cardId}" style="margin: 0; flex-basis: auto; font-weight: normal;">Adicionar Borda <input type="checkbox" class="add-border" id="border-${cardId}"></label>
-                
+                <input type="checkbox" class="add-border" id="border-${cardId}">
+                <label for="border-${cardId}" style="margin: 0; flex-basis: auto; font-weight: normal;">Adicionar Borda</label>
             </div>
             
             <button class="action-button remove-image-button">Remover</button>
@@ -152,18 +160,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const paper = paperSizesMm[paperSizeSelect.value];
         const paperPx = { width: mmToPx(paper.width), height: mmToPx(paper.height) };
 
-        const canvas = document.createElement('canvas');
-        canvas.width = paperPx.width;
-        canvas.height = paperPx.height;
-        const ctx = canvas.getContext('2d');
+        finalCanvases = [];
+        let currentCanvas = document.createElement('canvas');
+        currentCanvas.width = paperPx.width;
+        currentCanvas.height = paperPx.height;
+        let ctx = currentCanvas.getContext('2d');
         ctx.fillStyle = '#FFFFFF';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillRect(0, 0, currentCanvas.width, currentCanvas.height);
 
         let currentX = 0;
         let currentY = 0;
         let maxHeightInRow = 0;
-
-        const drawPromises = [];
 
         for (const card of imageCards) {
             const imageDataUrl = card.dataset.imageData;
@@ -173,78 +180,131 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            const img = new Image();
-            img.src = imageDataUrl;
-
-            const promise = new Promise((resolve, reject) => {
-                img.onload = () => {
-                    const imgWidthMm = parseFloat(card.querySelector('.image-width-mm').value);
-                    const imgHeightMm = parseFloat(card.querySelector('.image-height-mm').value);
-                    const imgCount = parseInt(card.querySelector('.image-count').value);
-                    const imgMarginMm = parseFloat(card.querySelector('.image-margin-mm').value);
-                    const addBorder = card.querySelector('.add-border').checked;
-                    const roundPercent = parseInt(card.querySelector('.image-round-percent').value);
-
-                    const imgWidthPx = mmToPx(imgWidthMm);
-                    const imgHeightPx = mmToPx(imgHeightMm);
-                    const imgMarginPx = mmToPx(imgMarginMm);
-
-                    for (let i = 0; i < imgCount; i++) {
-                        if (currentX + imgWidthPx > paperPx.width) {
-                            currentX = 0;
-                            currentY += maxHeightInRow + imgMarginPx;
-                            maxHeightInRow = 0;
-                        }
-                        
-                        if (currentY + imgHeightPx > paperPx.height) {
-                            console.warn('As imagens não cabem na folha, a replicação será cortada.');
-                            break;
-                        }
-
-                        ctx.save();
-                        ctx.beginPath();
-                        const radius = Math.min(imgWidthPx, imgHeightPx) * (roundPercent / 100);
-                        ctx.moveTo(currentX + radius, currentY);
-                        ctx.arcTo(currentX + imgWidthPx, currentY, currentX + imgWidthPx, currentY + radius, radius);
-                        ctx.lineTo(currentX + imgWidthPx, currentY + imgHeightPx - radius);
-                        ctx.arcTo(currentX + imgWidthPx, currentY + imgHeightPx, currentX + imgWidthPx - radius, currentY + imgHeightPx, radius);
-                        ctx.lineTo(currentX + radius, currentY + imgHeightPx);
-                        ctx.arcTo(currentX, currentY + imgHeightPx, currentX, currentY + imgHeightPx - radius, radius);
-                        ctx.lineTo(currentX, currentY + radius);
-                        ctx.arcTo(currentX, currentY, currentX + radius, currentY, radius);
-                        ctx.closePath();
-                        ctx.clip();
-                        
-                        ctx.drawImage(img, currentX, currentY, imgWidthPx, imgHeightPx);
-                        ctx.restore();
-
-                        if (addBorder) {
-                            ctx.strokeStyle = '#000000';
-                            ctx.lineWidth = 1;
-                            ctx.strokeRect(currentX, currentY, imgWidthPx, imgHeightPx);
-                        }
-
-                        currentX += imgWidthPx + imgMarginPx;
-                        maxHeightInRow = Math.max(maxHeightInRow, imgHeightPx);
-                    }
-                    resolve();
-                };
-                img.onerror = () => reject(new Error('Falha ao carregar a imagem.'));
+            const img = await new Promise((resolve, reject) => {
+                const tempImg = new Image();
+                tempImg.onload = () => resolve(tempImg);
+                tempImg.onerror = () => reject(new Error('Falha ao carregar a imagem.'));
+                tempImg.src = imageDataUrl;
             });
 
-            drawPromises.push(promise);
-        }
+            const imgWidthMm = parseFloat(card.querySelector('.image-width-mm').value);
+            const imgHeightMm = parseFloat(card.querySelector('.image-height-mm').value);
+            const imgCount = parseInt(card.querySelector('.image-count').value);
+            const imgMarginMm = parseFloat(card.querySelector('.image-margin-mm').value);
+            const addBorder = card.querySelector('.add-border').checked;
+            const roundPercent = parseInt(card.querySelector('.image-round-percent').value);
 
-        Promise.all(drawPromises).then(() => {
-            const newWindow = window.open('', '_blank', `width=${window.screen.width},height=${window.screen.height}`);
-            newWindow.document.write('<html><head><title>Imagens para Impressão</title></head><body style="margin:0;padding:0;display:flex;justify-content:center;align-items:center;"></body></html>');
-            newWindow.document.close();
-            const style = newWindow.document.createElement('style');
-            style.innerHTML = 'body { margin: 0; padding: 0; } canvas { width: 100%; height: auto; }';
-            newWindow.document.head.appendChild(style);
-            newWindow.document.body.appendChild(canvas);
-        }).catch(error => {
-            alert(error.message);
-        });
+            if (isNaN(imgWidthMm) || isNaN(imgHeightMm) || isNaN(imgCount) || imgWidthMm <= 0 || imgHeightMm <= 0 || imgCount <= 0 || isNaN(imgMarginMm) || imgMarginMm < 0 || isNaN(roundPercent) || roundPercent < 0 || roundPercent > 50) {
+                alert('Por favor, preencha todos os campos do card corretamente.');
+                return;
+            }
+
+            const imgWidthPx = mmToPx(imgWidthMm);
+            const imgHeightPx = mmToPx(imgHeightMm);
+            const imgMarginPx = mmToPx(imgMarginMm);
+
+            for (let i = 0; i < imgCount; i++) {
+                if (currentX + imgWidthPx + imgMarginPx > paperPx.width) {
+                    currentX = 0;
+                    currentY += maxHeightInRow + imgMarginPx;
+                    maxHeightInRow = 0;
+                }
+                
+                if (currentY + imgHeightPx + imgMarginPx > paperPx.height) {
+                    finalCanvases.push(currentCanvas);
+                    currentCanvas = document.createElement('canvas');
+                    currentCanvas.width = paperPx.width;
+                    currentCanvas.height = paperPx.height;
+                    ctx = currentCanvas.getContext('2d');
+                    ctx.fillStyle = '#FFFFFF';
+                    ctx.fillRect(0, 0, currentCanvas.width, currentCanvas.height);
+                    currentX = 0;
+                    currentY = 0;
+                    maxHeightInRow = 0;
+                }
+
+                ctx.save();
+                ctx.beginPath();
+                const radius = Math.min(imgWidthPx, imgHeightPx) * (roundPercent / 100);
+                ctx.moveTo(currentX + radius, currentY);
+                ctx.arcTo(currentX + imgWidthPx, currentY, currentX + imgWidthPx, currentY + radius, radius);
+                ctx.lineTo(currentX + imgWidthPx, currentY + imgHeightPx - radius);
+                ctx.arcTo(currentX + imgWidthPx, currentY + imgHeightPx, currentX + imgWidthPx - radius, currentY + imgHeightPx, radius);
+                ctx.lineTo(currentX + radius, currentY + imgHeightPx);
+                ctx.arcTo(currentX, currentY + imgHeightPx, currentX, currentY + imgHeightPx - radius, radius);
+                ctx.lineTo(currentX, currentY + radius);
+                ctx.arcTo(currentX, currentY, currentX + radius, currentY, radius);
+                ctx.closePath();
+                ctx.clip();
+                
+                ctx.drawImage(img, currentX, currentY, imgWidthPx, imgHeightPx);
+                ctx.restore();
+
+                if (addBorder) {
+                    ctx.strokeStyle = '#000000';
+                    ctx.lineWidth = 1;
+                    ctx.strokeRect(currentX, currentY, imgWidthPx, imgHeightPx);
+                }
+
+                currentX += imgWidthPx + imgMarginPx;
+                maxHeightInRow = Math.max(maxHeightInRow, imgHeightPx);
+            }
+        }
+        
+        finalCanvases.push(currentCanvas);
+        
+        displayCurrentPage();
+        paginationControls.style.display = 'flex';
+        downloadButton.style.display = 'block';
+    });
+
+    prevPageButton.addEventListener('click', () => {
+        if (currentPageIndex > 0) {
+            currentPageIndex--;
+            displayCurrentPage();
+        }
+    });
+
+    nextPageButton.addEventListener('click', () => {
+        if (currentPageIndex < finalCanvases.length - 1) {
+            currentPageIndex++;
+            displayCurrentPage();
+        }
+    });
+
+    function displayCurrentPage() {
+        printPreviewContainer.innerHTML = '';
+        const canvas = finalCanvases[currentPageIndex];
+        const previewCanvas = document.createElement('canvas');
+        const ratio = canvas.width / canvas.height;
+        previewCanvas.width = 320; // Largura fixa para pré-visualização
+        previewCanvas.height = 320 / ratio;
+        const previewCtx = previewCanvas.getContext('2d');
+        previewCtx.drawImage(canvas, 0, 0, previewCanvas.width, previewCanvas.height);
+        previewCanvas.id = 'print-canvas';
+        printPreviewContainer.appendChild(previewCanvas);
+        pageInfo.textContent = `Página ${currentPageIndex + 1} de ${finalCanvases.length}`;
+    }
+
+    downloadButton.addEventListener('click', async () => {
+        if (finalCanvases.length === 1) {
+            const link = document.createElement('a');
+            link.download = `imagens_replicadas.png`;
+            link.href = finalCanvases[0].toDataURL('image/png');
+            link.click();
+        } else {
+            const zip = new JSZip();
+            for (let i = 0; i < finalCanvases.length; i++) {
+                const canvas = finalCanvases[i];
+                const imageData = canvas.toDataURL('image/png');
+                zip.file(`pagina_${i+1}.png`, imageData.substring(imageData.indexOf(',') + 1), {base64: true});
+            }
+            zip.generateAsync({type: "blob"}).then(function(content) {
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(content);
+                link.download = "imagens_replicadas.zip";
+                link.click();
+            });
+        }
     });
 });

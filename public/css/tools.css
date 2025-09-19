@@ -374,3 +374,440 @@ select#paper-size {
 .image-card > div > input[type="checkbox"] {
     margin-right: 5px;
 }
+/* Layout da página com três colunas */
+.replicador-layout {
+    display: flex;
+    gap: 30px;
+    align-items: flex-start;
+}
+
+.controls-column {
+    flex-basis: 300px;
+    flex-shrink: 0;
+    position: sticky;
+    top: 20px;
+    align-self: flex-start;
+}
+
+.cards-column {
+    flex-grow: 1;
+}
+
+.preview-column {
+    flex-basis: 350px;
+    flex-shrink: 0;
+    position: sticky;
+    top: 20px;
+    align-self: flex-start;
+}
+
+/* Estilos para o card de opções de papel */
+.options-paper-card {
+    margin-bottom: 20px;
+}
+
+/* Estilo para o select de papel */
+select#paper-size {
+    padding: 10px;
+    font-size: 1em;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    background-color: #f9f9f9;
+    min-width: 180px;
+}
+
+/* Container para os cards de imagem */
+.cards-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: flex-start;
+}
+
+/* Estilos para o card de cada imagem */
+.image-card {
+    background-color: #fff;
+    border: 1px solid #000;
+    border-radius: 8px;
+    padding: 10px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 250px;
+    flex-shrink: 0;
+}
+
+.image-card h3 {
+    margin: 0;
+    font-size: 1.2em;
+    color: #0056b3;
+}
+
+.image-card .remove-button {
+    background-color: #dc3545;
+    border: 1px solid #dc3545;
+    color: #fff;
+    padding: 8px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9em;
+    margin-top: 10px;
+    width: 100%;
+    box-sizing: border-box;
+    text-align: center;
+}
+
+.remove-image-button:hover {
+    background-color: #c82333;
+    border-color: #c82333;
+}
+
+.image-preview {
+    width: 100%;
+    height: 150px;
+    border: 2px dashed #ccc;
+    border-radius: 8px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    margin-bottom: 5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.image-preview:hover {
+    background-color: #f0f0f0;
+}
+
+.image-preview img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+/* Botões de controle no card */
+.action-button.card-button {
+    width: 100%;
+    margin-top: 10px;
+}
+
+/* Layout de inputs em linha e cortados pela metade */
+.image-card > div:not(.image-preview) {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.image-card > div > label {
+    flex-basis: 90px;
+    text-align: right;
+    font-weight: 500;
+}
+
+.image-card > div > input[type="number"] {
+    flex-grow: 1;
+    max-width: 120px;
+}
+
+.image-card > div > input[type="checkbox"] {
+    margin-right: 5px;
+}
+
+
+/* Estilos para o Modal */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 100;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.7);
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 5% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+    max-width: 700px;
+    border-radius: 8px;
+    position: relative;
+}
+
+.close-button {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close-button:hover,
+.close-button:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.image-crop-container {
+    width: 100%;
+    max-height: 500px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Estilo para a pré-visualização da impressão */
+.preview-canvas-container {
+    border: 1px solid #ccc;
+    background-color: #fff;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px;
+    margin-top: 15px;
+}
+
+#print-canvas {
+    max-width: 100%;
+    height: auto;
+    border: 1px solid #000;
+}
+
+#pagination-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 10px;
+    width: 100%;
+}
+
+.small-button {
+    width: auto;
+    padding: 8px 12px;
+    font-size: 0.9em;
+}
+/* Layout da página com três colunas */
+.replicador-layout {
+    display: flex;
+    gap: 30px;
+    align-items: flex-start;
+}
+
+.controls-column {
+    flex-basis: 300px;
+    flex-shrink: 0;
+    position: sticky;
+    top: 20px;
+    align-self: flex-start;
+}
+
+.cards-column {
+    flex-grow: 1;
+}
+
+.preview-column {
+    flex-basis: 350px;
+    flex-shrink: 0;
+    position: sticky;
+    top: 20px;
+    align-self: flex-start;
+}
+
+/* Estilos para o card de opções de papel */
+.options-paper-card {
+    margin-bottom: 20px;
+}
+
+/* Estilo para o select de papel */
+select#paper-size {
+    padding: 10px;
+    font-size: 1em;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    background-color: #f9f9f9;
+    min-width: 180px;
+}
+
+/* Container para os cards de imagem */
+.cards-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: flex-start;
+}
+
+/* Estilos para o card de cada imagem */
+.image-card {
+    background-color: #fff;
+    border: 1px solid #000;
+    border-radius: 8px;
+    padding: 10px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 250px;
+    flex-shrink: 0;
+}
+
+.image-card h3 {
+    margin: 0;
+    font-size: 1.2em;
+    color: #0056b3;
+}
+
+.image-card .remove-button {
+    background-color: #dc3545;
+    border: 1px solid #dc3545;
+    color: #fff;
+    padding: 8px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9em;
+    margin-top: 10px;
+    width: 100%;
+    box-sizing: border-box;
+    text-align: center;
+}
+
+.remove-image-button:hover {
+    background-color: #c82333;
+    border-color: #c82333;
+}
+
+.image-preview {
+    width: 100%;
+    height: 150px;
+    border: 2px dashed #ccc;
+    border-radius: 8px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    margin-bottom: 5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.image-preview:hover {
+    background-color: #f0f0f0;
+}
+
+.image-preview img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+/* Botões de controle no card */
+.action-button.card-button {
+    width: 100%;
+    margin-top: 10px;
+}
+
+/* Layout de inputs em linha e cortados pela metade */
+.image-card > div:not(.image-preview) {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.image-card > div > label {
+    flex-basis: 90px;
+    text-align: right;
+    font-weight: 500;
+}
+
+.image-card > div > input[type="number"] {
+    flex-grow: 1;
+    max-width: 120px;
+}
+
+.image-card > div > input[type="checkbox"] {
+    margin-right: 5px;
+}
+
+/* Estilos para o Modal */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 100;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.7);
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 5% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+    max-width: 700px;
+    border-radius: 8px;
+    position: relative;
+}
+
+.close-button {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close-button:hover,
+.close-button:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.image-crop-container {
+    width: 100%;
+    max-height: 500px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Estilo para a pré-visualização da impressão */
+.preview-canvas-container {
+    border: 1px solid #ccc;
+    background-color: #fff;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px;
+    margin-top: 15px;
+}
+
+#print-canvas {
+    max-width: 100%;
+    height: auto;
+    border: 1px solid #000;
+}
+
+#pagination-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 10px;
+    width: 100%;
+}
+
+.small-button {
+    width: auto;
+    padding: 8px 12px;
+    font-size: 0.9em;
+}
