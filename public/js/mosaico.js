@@ -1,81 +1,47 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const imageFileUploader = document.getElementById('image-file-input');
-    const imageUploadArea = document.querySelector('.image-upload-area');
-    const divisionMethodRadios = document.querySelectorAll('input[name="division-method"]');
-    const divisionBySizeSection = document.getElementById('division-by-size');
-    const divisionByGridSection = document.getElementById('division-by-grid');
-    const finalWidthInput = document.getElementById('final-width');
-    const finalHeightInput = document.getElementById('final-height');
-    const gridColsInput = document.getElementById('grid-cols');
-    const gridRowsInput = document.getElementById('grid-rows');
-    const paperSizeSelect = document.getElementById('paper-size');
-    const orientationSelect = document.getElementById('orientation');
-    const calculateButton = document.getElementById('calculate-button');
-    const previewGrid = document.getElementById('preview-grid');
-    const saveButton = document.getElementById('save-button');
-
-    const modal = document.getElementById('modal');
-    const modalImage = document.getElementById('modal-image');
-    const cropButton = document.getElementById('crop-button');
-    const closeButton = document.querySelector('.close-button');
-
+    // 1. Definição de constantes e variáveis
+    const DOM = {};
     let cropper;
-    let originalImage = null;
     let croppedImage = null;
-    let removeBtn = null;
 
-    const dpi = 300; // DPI padrão para impressão
     const paperSizesCm = {
         A4: { width: 21, height: 29.7 },
         A3: { width: 29.7, height: 42 }
     };
     
-    // Cria o botão de remover imagem
-    function createRemoveButton() {
-        const btn = document.createElement('button');
-        btn.textContent = 'X';
-        btn.className = 'remove-btn';
-        btn.addEventListener('click', (e) => {
-            e.stopPropagation(); // Impede que o clique na imagem abra o modal
-            croppedImage = null;
-            imageUploadArea.innerHTML = '<p>Clique aqui para selecionar ou ajustar a imagem.</p>';
-            updatePreview();
-        });
-        return btn;
+    // 2. Funções de inicialização
+    function initializeDOM() {
+        DOM.imageFileUploader = document.getElementById('image-file-input');
+        DOM.imageUploadArea = document.querySelector('.image-upload-area');
+        DOM.divisionMethodRadios = document.querySelectorAll('input[name="division-method"]');
+        DOM.divisionBySizeSection = document.getElementById('division-by-size');
+        DOM.divisionByGridSection = document.getElementById('division-by-grid');
+        DOM.finalWidthInput = document.getElementById('final-width');
+        DOM.finalHeightInput = document.getElementById('final-height');
+        DOM.gridColsInput = document.getElementById('grid-cols');
+        DOM.gridRowsInput = document.getElementById('grid-rows');
+        DOM.paperSizeSelect = document.getElementById('paper-size');
+        DOM.orientationSelect = document.getElementById('orientation');
+        DOM.autoDpiCheckbox = document.getElementById('auto-dpi');
+        DOM.dpiInput = document.getElementById('dpi-input');
+        DOM.calculateButton = document.getElementById('calculate-button');
+        DOM.previewGrid = document.getElementById('preview-grid');
+        DOM.saveButton = document.getElementById('save-button');
+        DOM.modal = document.getElementById('modal');
+        DOM.modalImage = document.getElementById('modal-image');
+        DOM.cropButton = document.getElementById('crop-button');
+        DOM.closeButton = document.querySelector('.close-button');
+        DOM.finalWidthDisplay = document.getElementById('final-width-display');
+        DOM.finalHeightDisplay = document.getElementById('final-height-display');
     }
 
-    // Abre o seletor de arquivo ao clicar na área de upload
-    imageUploadArea.addEventListener('click', () => {
-        if (croppedImage) {
-            openModal(croppedImage.src);
-        } else {
-            imageFileUploader.click();
-        }
-    });
-
-    // Lógica para carregar a imagem e abrir o modal de ajuste
-    imageFileUploader.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                originalImage = new Image();
-                originalImage.onload = () => {
-                    openModal(originalImage.src);
-                };
-                originalImage.src = event.target.result;
-            };
-            reader.readAsDataURL(file);
-        }
-    });
-
-    // Abre o modal de ajuste
+    // 3. Funções de Manipulação
     function openModal(imageSrc) {
-        modal.style.display = 'block';
-        modalImage.src = imageSrc;
-        modalImage.onload = () => {
+        DOM.modal.style.display = 'block';
+        DOM.modalImage.src = imageSrc;
+        DOM.modalImage.onload = () => {
             if (cropper) cropper.destroy();
-            cropper = new Cropper(modalImage, {
+            cropper = new Cropper(DOM.modalImage, {
                 viewMode: 1,
                 zoomable: true,
                 dragMode: 'move',
@@ -84,169 +50,153 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    // Fecha o modal
-    closeButton.addEventListener('click', () => {
-        modal.style.display = 'none';
-        if (cropper) cropper.destroy();
-    });
+    function handleFileChange(event) {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const originalImage = new Image();
+                originalImage.onload = () => openModal(originalImage.src);
+                originalImage.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+    }
 
-    // Aplica o ajuste e salva a imagem cortada
-    cropButton.addEventListener('click', () => {
+    function handleCrop() {
         if (!cropper) return;
         const croppedCanvas = cropper.getCroppedCanvas();
         croppedImage = new Image();
         croppedImage.src = croppedCanvas.toDataURL();
         
         croppedImage.onload = () => {
-            modal.style.display = 'none';
+            DOM.modal.style.display = 'none';
             if (cropper) cropper.destroy();
             
-            // Remove o botão anterior se existir
-            if (removeBtn) {
-                removeBtn.remove();
-            }
-
-            // Reduz o tamanho da imagem de pré-visualização para um tamanho razoável
             const ratio = croppedImage.width / croppedImage.height;
             const previewWidth = 200;
             const previewHeight = previewWidth / ratio;
             
-            imageUploadArea.innerHTML = `<img src="${croppedImage.src}" alt="Imagem de pré-visualização" style="width: ${previewWidth}px; height: ${previewHeight}px; border-radius: 8px;">`;
+            DOM.imageUploadArea.innerHTML = `<img src="${croppedImage.src}" alt="Pré-visualização da imagem" style="width: ${previewWidth}px; height: ${previewHeight}px; border-radius: 8px;">`;
             
-            removeBtn = createRemoveButton();
-            imageUploadArea.appendChild(removeBtn);
-            
-            updatePreview();
-        };
-    });
-
-    // Alternar entre os métodos de divisão
-    divisionMethodRadios.forEach(radio => {
-        radio.addEventListener('change', () => {
-            divisionBySizeSection.style.display = radio.value === 'by-size' ? 'block' : 'none';
-            divisionByGridSection.style.display = radio.value === 'by-grid' ? 'block' : 'none';
-            updatePreview();
-        });
-    });
-
-    // Atualiza o display das dimensões estimadas em tempo real
-    function updateEstimatedDimensions() {
-        const paperSize = paperSizeSelect.value;
-        const orientation = orientationSelect.value;
-        const cols = parseInt(gridColsInput.value) || 1;
-        const rows = parseInt(gridRowsInput.value) || 1;
-        
-        let paperWidth = paperSizesCm[paperSize].width;
-        let paperHeight = paperSizesCm[paperSize].height;
-
-        if (orientation === 'landscape') {
-            [paperWidth, paperHeight] = [paperHeight, paperWidth];
-        }
-        
-        const finalWidth = (cols * paperWidth).toFixed(1);
-        const finalHeight = (rows * paperHeight).toFixed(1);
-        
-        document.getElementById('final-width-display').textContent = finalWidth;
-        document.getElementById('final-height-display').textContent = finalHeight;
-    }
-
-    // Atualiza a pré-visualização ao mudar os inputs
-    function setupRealtimeUpdates() {
-        [finalWidthInput, finalHeightInput, gridColsInput, gridRowsInput, paperSizeSelect, orientationSelect].forEach(input => {
-            input.addEventListener('input', () => {
-                if (document.querySelector('input[name="division-method"]:checked').value === 'by-grid') {
-                    updateEstimatedDimensions();
-                }
-                updatePreview();
+            const removeBtn = document.createElement('button');
+            removeBtn.textContent = 'X';
+            removeBtn.className = 'remove-btn';
+            removeBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                croppedImage = null;
+                DOM.imageUploadArea.innerHTML = '<p>Clique aqui para selecionar ou ajustar a imagem.</p>';
+                DOM.saveButton.style.display = 'none';
             });
-        });
-        
-        document.querySelectorAll('input[name="division-method"]').forEach(radio => {
-            radio.addEventListener('change', updatePreview);
-        });
+            DOM.imageUploadArea.appendChild(removeBtn);
+            
+            calculateAndRenderPreview();
+        };
     }
 
-    // Função para atualizar a pré-visualização
-    function updatePreview() {
+    function calculateOptimalDpi(widthCm, heightCm) {
+        const maxDimensionPx = 20000; // Limite de 20.000 pixels para evitar problemas de memória
+        const minDpi = 72; // DPI mínimo para uma qualidade aceitável
+        const defaultDpi = 300; // DPI padrão para impressão
+
+        const mmToPx = (mm, dpi) => mm * dpi / 25.4;
+        const widthPx = mmToPx(widthCm * 10, defaultDpi);
+        const heightPx = mmToPx(heightCm * 10, defaultDpi);
+
+        let finalDpi = defaultDpi;
+        if (widthPx > maxDimensionPx || heightPx > maxDimensionPx) {
+            const ratio = Math.max(widthPx / maxDimensionPx, heightPx / maxDimensionPx);
+            finalDpi = Math.floor(defaultDpi / ratio);
+            if (finalDpi < minDpi) {
+                finalDpi = minDpi;
+            }
+        }
+        return finalDpi;
+    }
+
+    function calculateAndRenderPreview() {
         if (!croppedImage) {
-            previewGrid.innerHTML = '<p>Carregue uma imagem e defina as opções para pré-visualizar o mosaico.</p>';
-            saveButton.style.display = 'none';
+            DOM.previewGrid.innerHTML = '<p>Carregue uma imagem e defina as opções para pré-visualizar o mosaico.</p>';
+            DOM.saveButton.style.display = 'none';
             return;
         }
-        
+
         const method = document.querySelector('input[name="division-method"]:checked').value;
-        const paperSize = paperSizeSelect.value;
-        const orientation = orientationSelect.value;
+        const paperSize = DOM.paperSizeSelect.value;
+        const orientation = DOM.orientationSelect.value;
+        
+        let paperWidthCm = paperSizesCm[paperSize].width;
+        let paperHeightCm = paperSizesCm[paperSize].height;
+        if (orientation === 'landscape') {
+            [paperWidthCm, paperHeightCm] = [paperHeightCm, paperWidthCm];
+        }
+
         let finalWidthCm, finalHeightCm, cols, rows;
 
-        let paperWidth = paperSizesCm[paperSize].width;
-        let paperHeight = paperSizesCm[paperSize].height;
-
-        if (orientation === 'landscape') {
-            [paperWidth, paperHeight] = [paperHeight, paperWidth];
-        }
-
         if (method === 'by-size') {
-            finalWidthCm = parseFloat(finalWidthInput.value);
-            finalHeightCm = parseFloat(finalHeightInput.value);
+            finalWidthCm = parseFloat(DOM.finalWidthInput.value);
+            finalHeightCm = parseFloat(DOM.finalHeightInput.value);
             if (isNaN(finalWidthCm) || isNaN(finalHeightCm) || finalWidthCm <= 0 || finalHeightCm <= 0) {
-                previewGrid.innerHTML = '<p>Defina as dimensões finais corretamente.</p>';
-                saveButton.style.display = 'none';
+                DOM.previewGrid.innerHTML = '<p>Defina as dimensões finais corretamente.</p>';
+                DOM.saveButton.style.display = 'none';
                 return;
             }
-            cols = Math.ceil(finalWidthCm / paperWidth);
-            rows = Math.ceil(finalHeightCm / paperHeight);
+            cols = Math.ceil(finalWidthCm / paperWidthCm);
+            rows = Math.ceil(finalHeightCm / paperHeightCm);
         } else {
-            cols = parseInt(gridColsInput.value) || 1;
-            rows = parseInt(gridRowsInput.value) || 1;
-            finalWidthCm = cols * paperWidth;
-            finalHeightCm = rows * paperHeight;
-            updateEstimatedDimensions();
+            cols = parseInt(DOM.gridColsInput.value) || 1;
+            rows = parseInt(DOM.gridRowsInput.value) || 1;
+            finalWidthCm = cols * paperWidthCm;
+            finalHeightCm = rows * paperHeightCm;
+            DOM.finalWidthDisplay.textContent = finalWidthCm.toFixed(1);
+            DOM.finalHeightDisplay.textContent = finalHeightCm.toFixed(1);
+        }
+        
+        // Ajuste DPI dinâmico
+        if (DOM.autoDpiCheckbox.checked) {
+            const optimalDpi = calculateOptimalDpi(finalWidthCm, finalHeightCm);
+            DOM.dpiInput.value = optimalDpi;
+            DOM.dpiInput.disabled = true;
+        } else {
+            DOM.dpiInput.disabled = false;
         }
 
-        previewGrid.innerHTML = '';
-        
-        const previewCanvasWidth = 500;
         const aspectRatio = finalWidthCm / finalHeightCm;
+        const previewCanvasWidth = DOM.previewGrid.clientWidth;
         const previewCanvasHeight = previewCanvasWidth / aspectRatio;
         
+        DOM.previewGrid.innerHTML = '';
         const canvas = document.createElement('canvas');
         canvas.width = previewCanvasWidth;
         canvas.height = previewCanvasHeight;
         const ctx = canvas.getContext('2d');
         ctx.drawImage(croppedImage, 0, 0, canvas.width, canvas.height);
         
-        previewGrid.appendChild(canvas);
+        DOM.previewGrid.appendChild(canvas);
         
         for (let i = 1; i < cols; i++) {
             const line = document.createElement('div');
             line.classList.add('cut-line', 'vertical');
-            line.style.left = `${(i * paperWidth / finalWidthCm) * 100}%`;
-            previewGrid.appendChild(line);
+            line.style.left = `${(i * paperWidthCm / finalWidthCm) * 100}%`;
+            DOM.previewGrid.appendChild(line);
         }
         for (let i = 1; i < rows; i++) {
             const line = document.createElement('div');
             line.classList.add('cut-line', 'horizontal');
-            line.style.top = `${(i * paperHeight / finalHeightCm) * 100}%`;
-            previewGrid.appendChild(line);
+            line.style.top = `${(i * paperHeightCm / finalHeightCm) * 100}%`;
+            DOM.previewGrid.appendChild(line);
         }
-
-        saveButton.style.display = 'block';
+        
+        DOM.saveButton.style.display = 'block';
     }
 
-    calculateButton.addEventListener('click', updatePreview);
-    
-    // Inicia a atualização em tempo real
-    setupRealtimeUpdates();
-    
-    // Inicializa a pré-visualização assim que a página é carregada
-    updatePreview();
+    async function saveMosaico() {
+        if (!croppedImage) return;
 
-    saveButton.addEventListener('click', async () => {
         const method = document.querySelector('input[name="division-method"]:checked').value;
-        const paperSize = paperSizeSelect.value;
-        const orientation = orientationSelect.value;
-        const zip = new JSZip();
+        const paperSize = DOM.paperSizeSelect.value;
+        const orientation = DOM.orientationSelect.value;
+        const dpi = parseInt(DOM.dpiInput.value) || 300;
         
         let paperWidthCm = paperSizesCm[paperSize].width;
         let paperHeightCm = paperSizesCm[paperSize].height;
@@ -257,39 +207,48 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (method === 'by-size') {
-            finalWidthCm = parseFloat(finalWidthInput.value);
-            finalHeightCm = parseFloat(finalHeightInput.value);
+            finalWidthCm = parseFloat(DOM.finalWidthInput.value);
+            finalHeightCm = parseFloat(DOM.finalHeightInput.value);
+            if (isNaN(finalWidthCm) || isNaN(finalHeightCm) || finalWidthCm <= 0 || finalHeightCm <= 0) {
+                alert('Por favor, insira valores válidos para a largura e altura finais.');
+                return;
+            }
             cols = Math.ceil(finalWidthCm / paperWidthCm);
             rows = Math.ceil(finalHeightCm / paperHeightCm);
         } else {
-            cols = parseInt(gridColsInput.value);
-            rows = parseInt(gridRowsInput.value);
+            cols = parseInt(DOM.gridColsInput.value) || 1;
+            rows = parseInt(DOM.gridRowsInput.value) || 1;
+            if (isNaN(cols) || isNaN(rows) || cols <= 0 || rows <= 0) {
+                alert('Por favor, insira valores válidos para colunas e linhas.');
+                return;
+            }
             finalWidthCm = cols * paperWidthCm;
             finalHeightCm = rows * paperHeightCm;
         }
+        
+        const mmToPx = (mm) => mm * dpi / 25.4;
 
-        const totalWidthPx = finalWidthCm * dpi / 2.54;
-        const totalHeightPx = finalHeightCm * dpi / 2.54;
-        const paperWidthPx = paperWidthCm * dpi / 2.54;
-        const paperHeightPx = paperHeightCm * dpi / 2.54;
-
-        const originalCanvas = document.createElement('canvas');
-        originalCanvas.width = totalWidthPx;
-        originalCanvas.height = totalHeightPx;
-        const originalCtx = originalCanvas.getContext('2d');
-        originalCtx.drawImage(croppedImage, 0, 0, originalCanvas.width, originalCanvas.height);
+        const zip = new JSZip();
 
         for (let r = 0; r < rows; r++) {
             for (let c = 0; c < cols; c++) {
                 const sliceCanvas = document.createElement('canvas');
-                sliceCanvas.width = paperWidthPx;
-                sliceCanvas.height = paperHeightPx;
+                const sliceWidthPx = mmToPx(paperWidthCm * 10);
+                const sliceHeightPx = mmToPx(paperHeightCm * 10);
+
+                sliceCanvas.width = sliceWidthPx;
+                sliceCanvas.height = sliceHeightPx;
                 const sliceCtx = sliceCanvas.getContext('2d');
                 
+                const sourceX = (c * paperWidthCm) / finalWidthCm * croppedImage.width;
+                const sourceY = (r * paperHeightCm) / finalHeightCm * croppedImage.height;
+                const sourceWidth = (paperWidthCm / finalWidthCm) * croppedImage.width;
+                const sourceHeight = (paperHeightCm / finalHeightCm) * croppedImage.height;
+
                 sliceCtx.drawImage(
-                    originalCanvas,
-                    c * paperWidthPx, r * paperHeightPx, paperWidthPx, paperHeightPx,
-                    0, 0, paperWidthPx, paperHeightPx
+                    croppedImage,
+                    sourceX, sourceY, sourceWidth, sourceHeight,
+                    0, 0, sliceWidthPx, sliceHeightPx
                 );
                 
                 const imgData = sliceCanvas.toDataURL('image/png');
@@ -303,5 +262,42 @@ document.addEventListener('DOMContentLoaded', () => {
             link.download = "mosaico.zip";
             link.click();
         });
-    });
+    }
+
+    // 4. Configuração de Eventos
+    function setupEventListeners() {
+        DOM.imageUploadArea.addEventListener('click', () => {
+            if (croppedImage) {
+                openModal(croppedImage.src);
+            } else {
+                DOM.imageFileUploader.click();
+            }
+        });
+        
+        DOM.imageFileUploader.addEventListener('change', handleFileChange);
+        DOM.closeButton.addEventListener('click', () => DOM.modal.style.display = 'none');
+        DOM.cropButton.addEventListener('click', handleCrop);
+        DOM.saveButton.addEventListener('click', saveMosaico);
+        
+        DOM.autoDpiCheckbox.addEventListener('change', () => {
+            DOM.dpiInput.disabled = DOM.autoDpiCheckbox.checked;
+            calculateAndRenderPreview();
+        });
+
+        DOM.divisionMethodRadios.forEach(radio => {
+            radio.addEventListener('change', () => {
+                DOM.divisionBySizeSection.style.display = radio.value === 'by-size' ? 'block' : 'none';
+                DOM.divisionByGridSection.style.display = radio.value === 'by-grid' ? 'block' : 'none';
+                calculateAndRenderPreview();
+            });
+        });
+
+        const inputElements = [DOM.finalWidthInput, DOM.finalHeightInput, DOM.gridColsInput, DOM.gridRowsInput, DOM.paperSizeSelect, DOM.orientationSelect, DOM.dpiInput];
+        inputElements.forEach(input => input.addEventListener('input', calculateAndRenderPreview));
+    }
+
+    // 5. Inicialização da aplicação
+    initializeDOM();
+    setupEventListeners();
+    calculateAndRenderPreview();
 });

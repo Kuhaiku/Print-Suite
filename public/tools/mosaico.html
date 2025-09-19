@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Criador de Mosaico</title>
     <link rel="stylesheet" href="/css/global.css">
-    <link rel="stylesheet" href="/css/tools.css">
+    <link rel="stylesheet" href="/css/mosaico.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </head>
@@ -68,9 +68,9 @@
             </div>
 
             <div class="controls-card">
-                <h2>4. Opções de Papel</h2>
+                <h2>4. Opções de Impressão</h2>
                 <div class="options-group">
-                    <label for="paper-size">Tamanho do Papel:</label>
+                    <label for="paper-size">Papel:</label>
                     <select id="paper-size">
                         <option value="A4" selected>A4 (21 x 29.7cm)</option>
                         <option value="A3">A3 (29.7 x 42cm)</option>
@@ -81,7 +81,14 @@
                         <option value="landscape">Paisagem</option>
                     </select>
                 </div>
-              
+                <div class="options-group">
+                    <label for="auto-dpi">
+                        <input type="checkbox" id="auto-dpi" checked>
+                        DPI Automático
+                    </label>
+                    <label for="dpi-input">DPI:</label>
+                    <input type="number" id="dpi-input" value="300" min="72" step="1" disabled>
+                </div>
             </div>
         </div>
         
@@ -109,7 +116,6 @@
     <input type="file" id="image-file-input" accept="image/*" style="display:none;">
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="/js/mosaico.js" defer></script>
 </body>
 </html>
