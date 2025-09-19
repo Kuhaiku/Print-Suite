@@ -31,7 +31,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Abre o seletor de arquivo ao clicar na área de upload
     imageUploadArea.addEventListener('click', () => {
-        imageFileUploader.click();
+        if (croppedImage) {
+            openModal(croppedImage.src);
+        } else {
+            imageFileUploader.click();
+        }
     });
 
     // Lógica para carregar a imagem e abrir o modal de ajuste
@@ -81,7 +85,13 @@ document.addEventListener('DOMContentLoaded', () => {
         croppedImage.onload = () => {
             modal.style.display = 'none';
             if (cropper) cropper.destroy();
-            imageUploadArea.innerHTML = `<img src="${croppedImage.src}" alt="Imagem de pré-visualização">`;
+            
+            // Reduz o tamanho da imagem de pré-visualização em 70%
+            const ratio = croppedImage.width / croppedImage.height;
+            const previewWidth = 500 * 0.3;
+            const previewHeight = previewWidth / ratio;
+            
+            imageUploadArea.innerHTML = `<img src="${croppedImage.src}" alt="Imagem de pré-visualização" style="width: ${previewWidth}px; height: ${previewHeight}px; border-radius: 8px;">`;
             updatePreview();
         };
     });

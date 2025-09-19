@@ -45,11 +45,11 @@ document.addEventListener('DOMContentLoaded', () => {
             <input type="file" id="file-upload-${cardId}" class="image-upload" accept="image/*" style="display: none;">
             
             <div>
-                <label for="width-${cardId}">Largura (mm)</label>
+                <label for="width-${cardId}">Largura(mm)</label>
                 <input type="number" id="width-${cardId}" class="image-width-mm" min="1" value="50" />
             </div>
             <div>
-                <label for="height-${cardId}">Altura (mm)</label>
+                <label for="height-${cardId}">Altura(mm)</label>
                 <input type="number" id="height-${cardId}" class="image-height-mm" min="1" value="50" />
             </div>
             <div>
@@ -57,11 +57,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 <input type="number" id="count-${cardId}" class="image-count" min="1" value="1" />
             </div>
             <div>
-                <label for="margin-${cardId}">Margem (mm)</label>
+                <label for="margin-${cardId}">Margem(mm)</label>
                 <input type="number" id="margin-${cardId}" class="image-margin-mm" min="0" value="0" />
             </div>
             <div>
-                <label for="round-${cardId}">Arredondar (%)</label>
+                <label for="round-${cardId}">Arredondar(%)</label>
                 <input type="number" id="round-${cardId}" class="image-round-percent" min="0" max="50" value="0" />
             </div>
             <div style="display: flex; align-items: center; gap: 10px;">
