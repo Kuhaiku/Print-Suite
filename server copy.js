@@ -3,18 +3,20 @@ const path = require('path');
 const session = require('express-session');
 const bcrypt = require('bcrypt');
 const mysql = require('mysql2/promise');
-const mercadopago = require('mercadopago');
+const nodemailer = require('nodemailer');
+const crypto = require('crypto');
 require('dotenv').config({ path: '.env.development' });
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// O código já está configurado para ler do .env
 const dbConfig = {
     host: process.env.DB_HOST,
+    port: process.env.DB_PORT,
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-    port: process.env.DB_PORT
+    database: process.env.DB_NAME
 };
 
 let pool;
@@ -26,7 +28,6 @@ async function connectToDatabase() {
         await createUsersTable();
     } catch (error) {
         console.error('Erro ao conectar ao banco de dados:', error);
-        process.exit(1);
     }
 }
 
@@ -36,7 +37,8 @@ async function createUsersTable() {
             id INT AUTO_INCREMENT PRIMARY KEY,
             email VARCHAR(255) UNIQUE NOT NULL,
             password VARCHAR(255) NOT NULL,
-            assinatura_ativa BOOLEAN DEFAULT FALSE,
+            reset_token VARCHAR(255),
+            reset_token_expires_at DATETIME,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
     `;
@@ -50,14 +52,9 @@ async function createUsersTable() {
 
 connectToDatabase();
 
-// Configuração do Mercado Pago
-mercadopago.configure({
-    access_token: process.env.MP_ACCESS_TOKEN
-});
-
-// Middlewares
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+
 app.use(session({
     secret: process.env.SESSION_SECRET,
     resave: false,
@@ -65,7 +62,6 @@ app.use(session({
     cookie: { secure: 'auto' }
 }));
 
-// Middleware de Autenticação e Autorização (NOVO!)
 const isAuthenticated = (req, res, next) => {
     if (req.session.user) {
         next();
@@ -74,42 +70,24 @@ const isAuthenticated = (req, res, next) => {
     }
 };
 
-const hasActiveSubscription = async (req, res, next) => {
-    try {
-        const [users] = await pool.query('SELECT assinatura_ativa FROM users WHERE email = ?', [req.session.user.email]);
-        const user = users[0];
-        if (user && user.assinatura_ativa) {
-            next();
-        } else {
-            res.redirect('/assinatura.html');
-        }
-    } catch (error) {
-        console.error('Erro ao verificar assinatura:', error);
-        res.status(500).send('Erro interno do servidor.');
-    }
-};
-
-// Rotas Protegidas por Assinatura
-app.get('/tools/foto3x4.html', isAuthenticated, hasActiveSubscription, (req, res) => {
+app.get('/tools/foto3x4.html', isAuthenticated, (req, res) => {
     res.sendFile(path.join(__dirname, 'public/tools/foto3x4.html'));
 });
 
-app.get('/tools/polaroid.html', isAuthenticated, hasActiveSubscription, (req, res) => {
+app.get('/tools/polaroid.html', isAuthenticated, (req, res) => {
     res.sendFile(path.join(__dirname, 'public/tools/polaroid.html'));
 });
 
-app.get('/tools/replicador.html', isAuthenticated, hasActiveSubscription, (req, res) => {
+app.get('/tools/replicador.html', isAuthenticated, (req, res) => {
     res.sendFile(path.join(__dirname, 'public/tools/replicador.html'));
 });
 
-app.get('/tools/mosaico.html', isAuthenticated, hasActiveSubscription, (req, res) => {
+app.get('/tools/mosaico.html', isAuthenticated, (req, res) => {
     res.sendFile(path.join(__dirname, 'public/tools/mosaico.html'));
 });
 
-// Rotas Estáticas (Protegida após a validação de ferramentas)
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Rotas de API
 app.post('/api/register', async (req, res) => {
     const { email, password } = req.body;
     if (!email || !password) {
@@ -162,6 +140,69 @@ app.post('/api/login', async (req, res) => {
     }
 });
 
+app.post('/api/forgot-password', async (req, res) => {
+    const { email } = req.body;
+
+    try {
+        const [users] = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
+        const user = users[0];
+
+        if (!user) {
+            return res.status(200).send('Se o email estiver em nossa base de dados, um código será enviado.');
+        }
+
+        const code = crypto.randomBytes(3).toString('hex').toUpperCase();
+        const expiresAt = new Date(Date.now() + 300000);
+
+        await pool.query('UPDATE users SET reset_token = ?, reset_token_expires_at = ? WHERE email = ?', [code, expiresAt, email]);
+
+        const transporter = nodemailer.createTransport({
+            host: process.env.EMAIL_HOST,
+            port: process.env.EMAIL_PORT,
+            secure: process.env.EMAIL_PORT == 465,
+            auth: {
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASS,
+            },
+        });
+
+        const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: email,
+            subject: 'Código de Recuperação de Senha - Print Suite',
+            html: `<p>Olá,</p><p>Você solicitou a recuperação de senha. Use o código abaixo para redefinir sua senha:</p><h2>${code}</h2><p>O código expira em 5 minutos.</p>`,
+        };
+
+        await transporter.sendMail(mailOptions);
+
+        res.status(200).send('Se o email estiver em nossa base de dados, um código será enviado.');
+    } catch (error) {
+        console.error('Erro ao solicitar recuperação de senha:', error);
+        res.status(500).send('Erro interno do servidor.');
+    }
+});
+
+app.post('/api/reset-password', async (req, res) => {
+    const { email, code, newPassword } = req.body;
+
+    try {
+        const [users] = await pool.query('SELECT * FROM users WHERE email = ? AND reset_token = ?', [email, code]);
+        const user = users[0];
+        
+        if (!user || new Date() > user.reset_token_expires_at) {
+            return res.status(400).send('Código inválido ou expirado.');
+        }
+
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        await pool.query('UPDATE users SET password = ?, reset_token = NULL, reset_token_expires_at = NULL WHERE id = ?', [hashedPassword, user.id]);
+
+        res.status(200).send('Senha redefinida com sucesso.');
+    } catch (error) {
+        console.error('Erro ao redefinir a senha:', error);
+        res.status(500).send('Erro interno do servidor.');
+    }
+});
+
 app.get('/api/logout', (req, res) => {
     req.session.destroy();
     res.redirect('/auth/login.html');
@@ -169,67 +210,12 @@ app.get('/api/logout', (req, res) => {
 
 app.get('/api/check-session', (req, res) => {
     if (req.session.user) {
-        res.status(200).json({ loggedIn: true });
+        res.status(200).send('Usuário logado.');
     } else {
-        res.status(401).json({ loggedIn: false });
+        res.status(401).send('Usuário não logado.');
     }
 });
 
-// Rota de criação de preferência (Checkout) do Mercado Pago
-app.post('/api/create_preference', isAuthenticated, async (req, res) => {
-    try {
-        const { email } = req.session.user;
-
-        const preference = {
-            items: [
-                {
-                    title: "Assinatura Mensal Print Suite",
-                    unit_price: 29.90,
-                    quantity: 1,
-                }
-            ],
-            payer: {
-                email: email
-            },
-            back_urls: {
-                success: `${req.protocol}://${req.get('host')}/assinatura-status.html?status=success`,
-                failure: `${req.protocol}://${req.get('host')}/assinatura-status.html?status=failure`,
-                pending: `${req.protocol}://${req.get('host')}/assinatura-status.html?status=pending`
-            },
-            notification_url: `${req.protocol}://${req.get('host')}/api/payment_notification?source_code_id=${req.session.user.id}`, // Usar ID do usuário para vincular a notificação
-            auto_return: "approved",
-        };
-
-        const result = await mercadopago.preferences.create(preference);
-        res.status(200).json({ url: result.body.init_point });
-    } catch (error) {
-        console.error('Erro ao criar a preferência de pagamento:', error);
-        res.status(500).json({ error: 'Erro ao processar a solicitação de pagamento.' });
-    }
-});
-
-// Webhook de notificação do Mercado Pago
-app.post('/api/payment_notification', async (req, res) => {
-    const topic = req.query.topic || req.body.topic;
-    if (topic === 'payment') {
-        const paymentId = req.body.data.id;
-        try {
-            const payment = await mercadopago.payment.findById(paymentId);
-            if (payment.body.status === 'approved') {
-                const userEmail = payment.body.payer.email;
-                await pool.query('UPDATE users SET assinatura_ativa = TRUE WHERE email = ?', [userEmail]);
-                console.log(`Assinatura ativada para o usuário: ${userEmail}`);
-            }
-        } catch (error) {
-            console.error('Erro ao processar a notificação de pagamento:', error);
-            res.status(500).send('Erro ao processar a notificação.');
-            return;
-        }
-    }
-    res.status(200).send('OK');
-});
-
-// Rota principal com controle de autenticação
 app.get('/', (req, res) => {
     if (req.session.user) {
         res.sendFile(path.join(__dirname, 'public/index.html'));

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assinatura - Print Suite</title>
+    <link rel="stylesheet" href="/css/global.css">
+    <link rel="stylesheet" href="/css/tools.css">
+    <style>
+        .auth-form-container {
+            max-width: 400px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .auth-form-container h2 {
+            margin-bottom: 20px;
+            color: var(--primary-color);
+        }
+
+        .auth-form-container button {
+            width: 100%;
+            margin-top: 15px;
+        }
+        
+        #message {
+            margin-top: 15px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <header class="main-header">
+        <h1>Assinatura Print Suite</h1>
+        <p>Acesse todas as ferramentas por um preço especial!</p>
+    </header>
+
+    <main class="content-container">
+        <div class="auth-form-container">
+            <h2>Plano Mensal</h2>
+            <p>Acesso ilimitado a todas as ferramentas por apenas R$ 29,90/mês.</p>
+            <p>Faça login ou registre-se para continuar.</p>
+            <button id="checkout-button" class="action-button">Pagar com Mercado Pago</button>
+            <p id="message"></p>
+        </div>
+    </main>
+    
+    <script>
+        document.getElementById('checkout-button').addEventListener('click', async () => {
+            const messageDiv = document.getElementById('message');
+            messageDiv.textContent = 'Verificando seu status de login...';
+
+            try {
+                // Primeiro, verifica se o usuário está logado
+                const sessionResponse = await fetch('/api/check-session');
+                const sessionData = await sessionResponse.json();
+                
+                if (!sessionData.loggedIn) {
+                    messageDiv.textContent = 'Você precisa estar logado para assinar.';
+                    setTimeout(() => window.location.href = '/auth/login.html', 1500);
+                    return;
+                }
+
+                messageDiv.textContent = 'Redirecionando para o Mercado Pago...';
+                const response = await fetch('/api/create_preference', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    window.location.href = data.url;
+                } else {
+                    const errorText = await response.json();
+                    messageDiv.textContent = 'Erro ao iniciar o pagamento: ' + (errorText.error || 'Erro desconhecido');
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                messageDiv.textContent = 'Ocorreu um erro ao conectar com o serviço de pagamento.';
+            }
+        });
+    </script>
+</body>
+</html>

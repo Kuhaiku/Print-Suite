@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Status do Pagamento</title>
+    <link rel="stylesheet" href="/css/global.css">
+</head>
+<body>
+    <header class="main-header">
+        <h1>Status do Pagamento</h1>
+    </header>
+
+    <main class="content-container">
+        <h2 id="status-title"></h2>
+        <p id="status-message"></p>
+        <a href="/" class="action-button">Voltar à Página Principal</a>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const params = new URLSearchParams(window.location.search);
+            const status = params.get('status');
+            const statusTitle = document.getElementById('status-title');
+            const statusMessage = document.getElementById('status-message');
+
+            if (status === 'success') {
+                statusTitle.textContent = 'Pagamento Aprovado!';
+                statusTitle.style.color = 'green';
+                statusMessage.textContent = 'Sua assinatura foi ativada com sucesso. Você já pode acessar todas as ferramentas.';
+            } else if (status === 'failure') {
+                statusTitle.textContent = 'Pagamento Recusado!';
+                statusTitle.style.color = 'red';
+                statusMessage.textContent = 'Houve um problema com seu pagamento. Por favor, tente novamente ou use outro meio de pagamento.';
+            } else if (status === 'pending') {
+                statusTitle.textContent = 'Pagamento Pendente!';
+                statusTitle.style.color = 'orange';
+                statusMessage.textContent = 'Seu pagamento está pendente. Assim que for aprovado, seu acesso será liberado.';
+            } else {
+                statusTitle.textContent = 'Status Desconhecido';
+                statusTitle.style.color = 'gray';
+                statusMessage.textContent = 'Não foi possível verificar o status do seu pagamento.';
+            }
+        });
+    </script>
+</body>
+</html>
