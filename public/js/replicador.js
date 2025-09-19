@@ -57,8 +57,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 <input type="number" id="round-${cardId}" class="image-round-percent" min="0" max="50" value="0" />
             </div>
             <div style="display: flex; align-items: center; gap: 10px;">
-                <input type="checkbox" class="add-border" id="border-${cardId}">
-                <label for="border-${cardId}" style="margin: 0; flex-basis: auto; font-weight: normal;">Adicionar Borda</label>
+                <label for="border-${cardId}" style="margin: 0; flex-basis: auto; font-weight: normal;">Adicionar Borda <input type="checkbox" class="add-border" id="border-${cardId}"></label>
+                
             </div>
             
             <button class="action-button remove-image-button">Remover</button>
