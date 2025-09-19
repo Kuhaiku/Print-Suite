@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro - Print Suite</title>
+    <link rel="stylesheet" href="/css/global.css">
+    <link rel="stylesheet" href="/css/tools.css">
+    <style>
+        .auth-form-container {
+            max-width: 400px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .auth-form-container h2 {
+            margin-bottom: 20px;
+            color: var(--primary-color);
+        }
+        
+        .auth-form-container .options-group {
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .auth-form-container input[type="email"],
+        .auth-form-container input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-size: 1em;
+        }
+
+        .auth-form-container button {
+            width: 100%;
+        }
+
+        #message {
+            margin-top: 15px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <header class="main-header">
+        <h1>Print Suite</h1>
+        <p>Crie sua conta para usar as ferramentas</p>
+    </header>
+
+    <main class="content-container">
+        <div class="auth-form-container">
+            <h2>Registro</h2>
+            <form id="register-form">
+                <div class="options-group">
+                    <input type="email" id="email" placeholder="Seu e-mail" required>
+                    <input type="password" id="password" placeholder="Crie uma senha" required>
+                </div>
+                <button type="submit" class="action-button">Registrar</button>
+                <div id="message"></div>
+            </form>
+            <p>Já tem uma conta? <a href="/auth/login.html">Faça login aqui</a>.</p>
+        </div>
+    </main>
+
+    <script src="/js/register.js" defer></script>
+</body>
+</html>

@@ -9,6 +9,7 @@
     --background-color: #f4f7f9;
     --border-color: #ccc;
     --hover-color: #004494;
+    --danger-color: #dc3545;
 }
 
 * {
@@ -23,6 +24,16 @@ body {
     color: var(--text-color);
     background-color: var(--background-color);
     padding: 20px;
+    position: relative;
+    min-height: 100vh;
+}
+
+/* Container para o botão de sair */
+.top-right-container {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
 }
 
 /* Container principal */
@@ -107,4 +118,12 @@ button {
 
 button:hover {
     background-color: var(--hover-color);
+}
+
+.action-button.logout-button {
+    background-color: var(--danger-color);
+}
+
+.action-button.logout-button:hover {
+    background-color: #c82333;
 }
