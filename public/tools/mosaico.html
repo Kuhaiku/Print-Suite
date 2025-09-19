@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Criador de Mosaico</title>
     <link rel="stylesheet" href="/css/global.css">
-    <link rel="stylesheet" href="/css/mosaico.css">
+    <link rel="stylesheet" href="/css/tools.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </head>
 <body>
@@ -20,15 +21,31 @@
         </ul>
     </nav>
 
-    <main class="content-container">
-        <div class="tool-content">
-            <div class="controls-section">
-                <h2>1. Carregue sua imagem</h2>
-                <input type="file" id="image-upload" accept="image/*">
+    <main class="content-container mosaico-layout">
+        <div class="controls-column">
+            <div class="controls-card">
+                <h2>1. Carregue e Ajuste</h2>
+                <div class="image-upload-area">
+                    <p>Clique aqui para selecionar ou ajustar a imagem.</p>
+                </div>
             </div>
 
-            <div class="controls-section">
-                <h2>2. Defina o tamanho final</h2>
+            <div class="controls-card">
+                <h2>2. Método de Divisão</h2>
+                <div class="options-group">
+                    <label>
+                        <input type="radio" name="division-method" value="by-size" checked>
+                        Por Medida (cm)
+                    </label>
+                    <label>
+                        <input type="radio" name="division-method" value="by-grid">
+                        Por Colunas e Linhas
+                    </label>
+                </div>
+            </div>
+
+            <div class="controls-card" id="division-by-size">
+                <h2>3. Tamanho Final</h2>
                 <div class="options-group">
                     <label for="final-width">Largura (cm):</label>
                     <input type="number" id="final-width" placeholder="Ex: 50" min="10">
@@ -37,8 +54,21 @@
                 </div>
             </div>
 
-            <div class="controls-section">
-                <h2>3. Escolha o papel e a orientação</h2>
+            <div class="controls-card" id="division-by-grid" style="display:none;">
+                <h2>3. Colunas e Linhas</h2>
+                <div class="options-group">
+                    <label for="grid-cols">Colunas:</label>
+                    <input type="number" id="grid-cols" placeholder="Ex: 3" min="1">
+                    <label for="grid-rows">Linhas:</label>
+                    <input type="number" id="grid-rows" placeholder="Ex: 2" min="1">
+                </div>
+                <div id="estimated-dimensions">
+                    <p>Dimensões estimadas: <span id="final-width-display">0</span> cm x <span id="final-height-display">0</span> cm</p>
+                </div>
+            </div>
+
+            <div class="controls-card">
+                <h2>4. Opções de Papel</h2>
                 <div class="options-group">
                     <label for="paper-size">Tamanho do Papel:</label>
                     <select id="paper-size">
@@ -51,17 +81,34 @@
                         <option value="landscape">Paisagem</option>
                     </select>
                 </div>
-                <button id="calculate-button" class="action-button">Calcular Mosaico</button>
+                <button id="calculate-button" class="action-button">Gerar Pré-visualização</button>
             </div>
-
-            <div id="preview-section" class="output-section" style="display: none;">
-                <h2>4. Pré-visualização</h2>
-                <div id="preview-grid" class="preview-grid-container"></div>
-                <button id="save-button" class="action-button">Salvar Mosaico (ZIP)</button>
+        </div>
+        
+        <div class="preview-column">
+            <div class="controls-card">
+                <h2>5. Pré-visualização do Mosaico</h2>
+                <div id="preview-grid" class="preview-grid-container">
+                    <p>Carregue uma imagem e defina as opções para pré-visualizar o mosaico.</p>
+                </div>
+                <button id="save-button" class="action-button" style="display: none;">Salvar Mosaico (ZIP)</button>
             </div>
         </div>
     </main>
     
+    <div id="modal" class="modal">
+      <div class="modal-content">
+        <span class="close-button">&times;</span>
+        <div class="image-crop-container">
+            <img id="modal-image" style="max-width: 100%;">
+        </div>
+        <button id="crop-button" class="action-button">Ajustar e Aplicar</button>
+      </div>
+    </div>
+    
+    <input type="file" id="image-file-input" accept="image/*" style="display:none;">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
     <script src="/js/mosaico.js" defer></script>
 </body>
 </html>

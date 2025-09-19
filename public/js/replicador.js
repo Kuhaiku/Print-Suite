@@ -204,13 +204,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const imgMarginPx = mmToPx(imgMarginMm);
 
             for (let i = 0; i < imgCount; i++) {
-                if (currentX + imgWidthPx + imgMarginPx > paperPx.width) {
+                if (currentX + imgWidthPx > paperPx.width) {
                     currentX = 0;
                     currentY += maxHeightInRow + imgMarginPx;
                     maxHeightInRow = 0;
                 }
                 
-                if (currentY + imgHeightPx + imgMarginPx > paperPx.height) {
+                if (currentY + imgHeightPx > paperPx.height) {
                     finalCanvases.push(currentCanvas);
                     currentCanvas = document.createElement('canvas');
                     currentCanvas.width = paperPx.width;
@@ -254,7 +254,7 @@ document.addEventListener('DOMContentLoaded', () => {
         finalCanvases.push(currentCanvas);
         
         displayCurrentPage();
-        paginationControls.style.display = 'flex';
+        paginationControls.style.display = finalCanvases.length > 1 ? 'flex' : 'none';
         downloadButton.style.display = 'block';
     });
 
@@ -277,7 +277,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const canvas = finalCanvases[currentPageIndex];
         const previewCanvas = document.createElement('canvas');
         const ratio = canvas.width / canvas.height;
-        previewCanvas.width = 320; // Largura fixa para pré-visualização
+        previewCanvas.width = 320;
         previewCanvas.height = 320 / ratio;
         const previewCtx = previewCanvas.getContext('2d');
         previewCtx.drawImage(canvas, 0, 0, previewCanvas.width, previewCanvas.height);
