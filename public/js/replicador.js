@@ -152,11 +152,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const paper = paperSizesMm[paperSizeSelect.value];
         const paperPx = { width: mmToPx(paper.width), height: mmToPx(paper.height) };
 
-        const newWindow = window.open('', '_blank', `width=${window.screen.width},height=${window.screen.height}`);
-        newWindow.document.write('<html><head><title>Imagens para Impressão</title></head><body style="margin:0;padding:0;display:flex;justify-content:center;align-items:center;"></body></html>');
-        newWindow.document.close();
-
-        const canvas = newWindow.document.createElement('canvas');
+        const canvas = document.createElement('canvas');
         canvas.width = paperPx.width;
         canvas.height = paperPx.height;
         const ctx = canvas.getContext('2d');
@@ -174,7 +170,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (!imageDataUrl) {
                 alert('Por favor, selecione uma imagem para todos os cards.');
-                newWindow.close();
                 return;
             }
 
@@ -241,14 +236,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         Promise.all(drawPromises).then(() => {
+            const newWindow = window.open('', '_blank', `width=${window.screen.width},height=${window.screen.height}`);
+            newWindow.document.write('<html><head><title>Imagens para Impressão</title></head><body style="margin:0;padding:0;display:flex;justify-content:center;align-items:center;"></body></html>');
+            newWindow.document.close();
             const style = newWindow.document.createElement('style');
             style.innerHTML = 'body { margin: 0; padding: 0; } canvas { width: 100%; height: auto; }';
             newWindow.document.head.appendChild(style);
             newWindow.document.body.appendChild(canvas);
-            alert('As imagens foram geradas em um pop-up. Você pode clicar com o botão direito na imagem para salvá-la ou imprimir.');
         }).catch(error => {
             alert(error.message);
-            newWindow.close();
         });
     });
 });
