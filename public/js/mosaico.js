@@ -22,12 +22,27 @@ document.addEventListener('DOMContentLoaded', () => {
     let cropper;
     let originalImage = null;
     let croppedImage = null;
+    let removeBtn = null;
 
     const dpi = 300; // DPI padrão para impressão
     const paperSizesCm = {
         A4: { width: 21, height: 29.7 },
         A3: { width: 29.7, height: 42 }
     };
+    
+    // Cria o botão de remover imagem
+    function createRemoveButton() {
+        const btn = document.createElement('button');
+        btn.textContent = 'X';
+        btn.className = 'remove-btn';
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation(); // Impede que o clique na imagem abra o modal
+            croppedImage = null;
+            imageUploadArea.innerHTML = '<p>Clique aqui para selecionar ou ajustar a imagem.</p>';
+            updatePreview();
+        });
+        return btn;
+    }
 
     // Abre o seletor de arquivo ao clicar na área de upload
     imageUploadArea.addEventListener('click', () => {
@@ -86,12 +101,21 @@ document.addEventListener('DOMContentLoaded', () => {
             modal.style.display = 'none';
             if (cropper) cropper.destroy();
             
-            // Reduz o tamanho da imagem de pré-visualização em 70%
+            // Remove o botão anterior se existir
+            if (removeBtn) {
+                removeBtn.remove();
+            }
+
+            // Reduz o tamanho da imagem de pré-visualização para um tamanho razoável
             const ratio = croppedImage.width / croppedImage.height;
-            const previewWidth = 500 * 0.3;
+            const previewWidth = 200;
             const previewHeight = previewWidth / ratio;
             
             imageUploadArea.innerHTML = `<img src="${croppedImage.src}" alt="Imagem de pré-visualização" style="width: ${previewWidth}px; height: ${previewHeight}px; border-radius: 8px;">`;
+            
+            removeBtn = createRemoveButton();
+            imageUploadArea.appendChild(removeBtn);
+            
             updatePreview();
         };
     });
@@ -215,15 +239,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Inicia a atualização em tempo real
     setupRealtimeUpdates();
     
-    imageUploadArea.addEventListener('click', () => {
-        if (croppedImage) {
-            // Se já tem imagem, abre o modal para reajustar
-            openModal(croppedImage.src);
-        } else {
-            // Se não tem, abre o seletor de arquivo
-            imageFileUploader.click();
-        }
-    });
+    // Inicializa a pré-visualização assim que a página é carregada
+    updatePreview();
 
     saveButton.addEventListener('click', async () => {
         const method = document.querySelector('input[name="division-method"]:checked').value;
