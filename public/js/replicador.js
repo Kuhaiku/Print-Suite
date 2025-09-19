@@ -15,49 +15,73 @@ document.addEventListener('DOMContentLoaded', () => {
         A3_portrait: { width: 297, height: 420 },
         A3_landscape: { width: 420, height: 297 }
     };
-
+    
     function addImageCard() {
         const cardDiv = document.createElement('div');
         cardDiv.className = 'image-card';
         cardDiv.innerHTML = `
             <h3>Imagem ${imageCardsContainer.querySelectorAll('.image-card').length + 1}</h3>
-            <div class="options-group">
-                <div>
+            <div class="image-preview">
+                <p>Nenhuma imagem selecionada</p>
+            </div>
+            <div class="input-grid">
+                <div class="input-group">
                     <label>Largura (mm)</label>
                     <input type="number" class="image-width-mm" min="1" value="50" />
                 </div>
-                <div>
+                <div class="input-group">
                     <label>Altura (mm)</label>
                     <input type="number" class="image-height-mm" min="1" value="50" />
                 </div>
-                <div>
+                <div class="input-group">
                     <label>Quantidade</label>
                     <input type="number" class="image-count" min="1" value="1" />
                 </div>
-                <div>
+                <div class="input-group">
                     <label>Margem (mm)</label>
                     <input type="number" class="image-margin-mm" min="0" value="0" />
                 </div>
-                <div>
+                <div class="input-group">
                     <label>Arredondar (%)</label>
                     <input type="number" class="image-round-percent" min="0" max="50" value="0" />
                 </div>
-                <div>
-                    <input type="checkbox" class="add-border" id="border-checkbox-${Date.now()}">
-                    <label for="border-checkbox-${Date.now()}" style="flex-basis: auto; text-align: left;">Adicionar Borda</label>
+                <div class="input-group">
+                    <label>Borda</label>
+                    <input type="checkbox" class="add-border">
                 </div>
             </div>
-            <input type="file" class="image-upload" accept="image/*" style="margin-top: 15px;">
-            <button class="remove-image-button">Remover</button>
+            <input type="file" class="image-upload" accept="image/*" style="display: none;">
+            <button class="action-button select-image-button">Selecionar Imagem</button>
+            <button class="action-button remove-image-button">Remover</button>
         `;
         imageCardsContainer.appendChild(cardDiv);
 
-        cardDiv.querySelector('.remove-image-button').addEventListener('click', () => {
+        const fileInput = cardDiv.querySelector('.image-upload');
+        const previewDiv = cardDiv.querySelector('.image-preview');
+        const selectImageButton = cardDiv.querySelector('.select-image-button');
+        const removeButton = cardDiv.querySelector('.remove-image-button');
+
+        selectImageButton.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    previewDiv.innerHTML = `<img src="${event.target.result}" alt="Pré-visualização da imagem">`;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        removeButton.addEventListener('click', () => {
             cardDiv.remove();
         });
     }
 
-    addImageCard(); // Adiciona o primeiro card por padrão
+    addImageCard();
     addImageButton.addEventListener('click', addImageCard);
 
     replicateButton.addEventListener('click', async () => {
@@ -94,7 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 newWindow.close();
                 return;
             }
-
+            
             const img = await new Promise((resolve, reject) => {
                 const reader = new FileReader();
                 reader.onload = (e) => {
