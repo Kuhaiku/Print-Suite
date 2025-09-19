@@ -10,6 +10,7 @@ require('dotenv').config({ path: '.env.development' });
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// O código já está configurado para ler do .env
 const dbConfig = {
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
@@ -185,11 +186,9 @@ app.post('/api/reset-password', async (req, res) => {
     const { email, code, newPassword } = req.body;
 
     try {
-        // Encontra o usuário e o token, sem verificar o tempo ainda
         const [users] = await pool.query('SELECT * FROM users WHERE email = ? AND reset_token = ?', [email, code]);
         const user = users[0];
         
-        // Verifica se o usuário existe e se o token não está expirado
         if (!user || new Date() > user.reset_token_expires_at) {
             return res.status(400).send('Código inválido ou expirado.');
         }
