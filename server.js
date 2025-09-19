@@ -3,12 +3,13 @@ const path = require('path');
 const session = require('express-session');
 const bcrypt = require('bcrypt');
 const mysql = require('mysql2/promise');
+const nodemailer = require('nodemailer');
+const crypto = require('crypto');
 require('dotenv').config({ path: '.env.development' });
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Configuração da conexão com o banco de dados
 const dbConfig = {
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
@@ -26,7 +27,6 @@ async function connectToDatabase() {
         await createUsersTable();
     } catch (error) {
         console.error('Erro ao conectar ao banco de dados:', error);
-        process.exit(1);
     }
 }
 
@@ -36,6 +36,8 @@ async function createUsersTable() {
             id INT AUTO_INCREMENT PRIMARY KEY,
             email VARCHAR(255) UNIQUE NOT NULL,
             password VARCHAR(255) NOT NULL,
+            reset_token VARCHAR(255),
+            reset_token_expires_at DATETIME,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
     `;
@@ -49,11 +51,9 @@ async function createUsersTable() {
 
 connectToDatabase();
 
-// Middleware para processar dados de formulário
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-// Configuração da sessão
 app.use(session({
     secret: process.env.SESSION_SECRET,
     resave: false,
@@ -61,7 +61,6 @@ app.use(session({
     cookie: { secure: 'auto' }
 }));
 
-// Middleware de autenticação
 const isAuthenticated = (req, res, next) => {
     if (req.session.user) {
         next();
@@ -70,7 +69,6 @@ const isAuthenticated = (req, res, next) => {
     }
 };
 
-// **IMPORTANTE:** Rotas Protegidas primeiro
 app.get('/tools/foto3x4.html', isAuthenticated, (req, res) => {
     res.sendFile(path.join(__dirname, 'public/tools/foto3x4.html'));
 });
@@ -87,10 +85,8 @@ app.get('/tools/mosaico.html', isAuthenticated, (req, res) => {
     res.sendFile(path.join(__dirname, 'public/tools/mosaico.html'));
 });
 
-// **Somente depois** de proteger as rotas específicas, sirva os arquivos estáticos
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Rotas de API
 app.post('/api/register', async (req, res) => {
     const { email, password } = req.body;
     if (!email || !password) {
@@ -143,6 +139,71 @@ app.post('/api/login', async (req, res) => {
     }
 });
 
+app.post('/api/forgot-password', async (req, res) => {
+    const { email } = req.body;
+
+    try {
+        const [users] = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
+        const user = users[0];
+
+        if (!user) {
+            return res.status(200).send('Se o email estiver em nossa base de dados, um código será enviado.');
+        }
+
+        const code = crypto.randomBytes(3).toString('hex').toUpperCase();
+        const expiresAt = new Date(Date.now() + 300000);
+
+        await pool.query('UPDATE users SET reset_token = ?, reset_token_expires_at = ? WHERE email = ?', [code, expiresAt, email]);
+
+        const transporter = nodemailer.createTransport({
+            host: process.env.EMAIL_HOST,
+            port: process.env.EMAIL_PORT,
+            secure: process.env.EMAIL_PORT == 465,
+            auth: {
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASS,
+            },
+        });
+
+        const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: email,
+            subject: 'Código de Recuperação de Senha - Print Suite',
+            html: `<p>Olá,</p><p>Você solicitou a recuperação de senha. Use o código abaixo para redefinir sua senha:</p><h2>${code}</h2><p>O código expira em 5 minutos.</p>`,
+        };
+
+        await transporter.sendMail(mailOptions);
+
+        res.status(200).send('Se o email estiver em nossa base de dados, um código será enviado.');
+    } catch (error) {
+        console.error('Erro ao solicitar recuperação de senha:', error);
+        res.status(500).send('Erro interno do servidor.');
+    }
+});
+
+app.post('/api/reset-password', async (req, res) => {
+    const { email, code, newPassword } = req.body;
+
+    try {
+        // Encontra o usuário e o token, sem verificar o tempo ainda
+        const [users] = await pool.query('SELECT * FROM users WHERE email = ? AND reset_token = ?', [email, code]);
+        const user = users[0];
+        
+        // Verifica se o usuário existe e se o token não está expirado
+        if (!user || new Date() > user.reset_token_expires_at) {
+            return res.status(400).send('Código inválido ou expirado.');
+        }
+
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        await pool.query('UPDATE users SET password = ?, reset_token = NULL, reset_token_expires_at = NULL WHERE id = ?', [hashedPassword, user.id]);
+
+        res.status(200).send('Senha redefinida com sucesso.');
+    } catch (error) {
+        console.error('Erro ao redefinir a senha:', error);
+        res.status(500).send('Erro interno do servidor.');
+    }
+});
+
 app.get('/api/logout', (req, res) => {
     req.session.destroy();
     res.redirect('/auth/login.html');
@@ -156,7 +217,6 @@ app.get('/api/check-session', (req, res) => {
     }
 });
 
-// Rota principal (agora com controle de autenticação)
 app.get('/', (req, res) => {
     if (req.session.user) {
         res.sendFile(path.join(__dirname, 'public/index.html'));
