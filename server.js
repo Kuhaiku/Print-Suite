@@ -5,7 +5,8 @@ const bcrypt = require('bcrypt');
 const mysql = require('mysql2/promise');
 const { MercadoPagoConfig, Preference, Payment } = require('mercadopago');
 const crypto = require('crypto');
-require('dotenv').config({ path: '.env.development' });
+const nodemailer = require('nodemailer'); // NOVO: Módulo Nodemailer
+require('dotenv').config({ path: '.env' });
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -55,6 +56,15 @@ connectToDatabase();
 
 const client = new MercadoPagoConfig({
     accessToken: process.env.MP_ACCESS_TOKEN
+});
+
+// Configuração do Nodemailer (NOVO)
+const transporter = nodemailer.createTransport({
+    service: 'gmail', // Ou o serviço de sua escolha (ex: 'outlook')
+    auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+    }
 });
 
 // Middlewares
@@ -194,10 +204,27 @@ app.post('/api/forgot-password', async (req, res) => {
             [resetCode, expiresAt, email]
         );
 
-        // Simulação de envio de e-mail com o código
-        console.log(`CÓDIGO DE REDEFINIÇÃO DE SENHA para ${email}: ${resetCode}`);
-        
-        res.status(200).send('Um código de redefinição foi enviado para seu email.');
+        // Lógica de envio de e-mail com o Nodemailer (NOVO)
+        const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: email,
+            subject: 'Código de Redefinição de Senha',
+            html: `
+                <p>Você solicitou a redefinição de senha.</p>
+                <p>Seu código é: <b>${resetCode}</b></p>
+                <p>O código é válido por 5 minutos.</p>
+            `,
+        };
+
+        transporter.sendMail(mailOptions, (error, info) => {
+            if (error) {
+                console.error('Erro ao enviar e-mail:', error);
+                // Pode retornar um erro para o front-end, mas não expor o erro exato
+                return res.status(500).send('Erro ao enviar o e-mail de redefinição.');
+            }
+            console.log('E-mail enviado:', info.response);
+            res.status(200).send('Um código de redefinição foi enviado para seu email.');
+        });
 
     } catch (error) {
         console.error('Erro na solicitação de redefinição:', error);
