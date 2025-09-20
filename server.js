@@ -262,7 +262,7 @@ app.post('/api/create_preference', isAuthenticated, async (req, res) => {
                 items: [
                     {
                         title: "Assinatura Mensal Print Suite",
-                        unit_price: 29.90,
+                        unit_price: 160.00,
                         quantity: 1,
                     }
                 ],
