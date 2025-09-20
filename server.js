@@ -251,6 +251,7 @@ app.post('/api/reset-password', async (req, res) => {
     }
 });
 
+
 app.post('/api/create_preference', isAuthenticated, async (req, res) => {
     try {
         const { email } = req.session.user;
@@ -269,14 +270,14 @@ app.post('/api/create_preference', isAuthenticated, async (req, res) => {
                     email: email
                 },
                 // AQUI ESTÁ A CORREÇÃO: back_urls e auto_return devem estar neste nível
-                back_urls: {
-                    success: `${req.protocol}://${req.get('host')}/assinatura-status.html?status=success`,
-                    failure: `${req.protocol}://${req.get('host')}/assinatura-status.html?status=failure`,
-                    pending: `${req.protocol}://${req.get('host')}/assinatura-status.html?status=pending`
-                },
-                auto_return: "approved",
-                notification_url: `${req.protocol}://${req.get('host')}/api/payment_notification`,
-            }
+            },
+            back_urls: {
+                success: `${req.protocol}://${req.get('host')}/assinatura-status.html?status=success`,
+                failure: `${req.protocol}://${req.get('host')}/assinatura-status.html?status=failure`,
+                pending: `${req.protocol}://${req.get('host')}/assinatura-status.html?status=pending`
+            },
+            auto_return: "approved",
+            notification_url: `${req.protocol}://${req.get('host')}/api/payment_notification`,
         });
 
         res.status(200).json({ url: result.init_point });
