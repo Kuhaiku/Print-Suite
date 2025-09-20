@@ -5,7 +5,7 @@ const bcrypt = require('bcrypt');
 const mysql = require('mysql2/promise');
 const { MercadoPagoConfig, Preference, Payment } = require('mercadopago');
 const crypto = require('crypto');
-const nodemailer = require('nodemailer'); // NOVO: Módulo Nodemailer
+const nodemailer = require('nodemailer');
 require('dotenv').config({ path: '.env' });
 
 const app = express();
@@ -58,16 +58,14 @@ const client = new MercadoPagoConfig({
     accessToken: process.env.MP_ACCESS_TOKEN
 });
 
-// Configuração do Nodemailer (NOVO)
 const transporter = nodemailer.createTransport({
-    service: 'gmail', // Ou o serviço de sua escolha (ex: 'outlook')
+    service: 'gmail',
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
     }
 });
 
-// Middlewares
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(session({
@@ -100,7 +98,6 @@ const hasActiveSubscription = async (req, res, next) => {
     }
 };
 
-// Rotas Protegidas por Assinatura
 app.get('/tools/foto3x4.html', isAuthenticated, hasActiveSubscription, (req, res) => {
     res.sendFile(path.join(__dirname, 'public/tools/foto3x4.html'));
 });
@@ -117,10 +114,8 @@ app.get('/tools/mosaico.html', isAuthenticated, hasActiveSubscription, (req, res
     res.sendFile(path.join(__dirname, 'public/tools/mosaico.html'));
 });
 
-// Rotas Estáticas
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Rotas de API
 app.post('/api/register', async (req, res) => {
     const { email, password } = req.body;
     if (!email || !password) {
@@ -186,7 +181,6 @@ app.get('/api/check-session', (req, res) => {
     }
 });
 
-// Rotas de redefinição de senha por CÓDIGO (NOVO!)
 app.post('/api/forgot-password', async (req, res) => {
     const { email } = req.body;
     try {
@@ -196,15 +190,14 @@ app.post('/api/forgot-password', async (req, res) => {
             return res.status(404).send('Usuário não encontrado.');
         }
 
-        const resetCode = Math.floor(100000 + Math.random() * 900000).toString(); // Código de 6 dígitos
-        const expiresAt = new Date(Date.now() + 300000); // Válido por 5 minutos
+        const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
+        const expiresAt = new Date(Date.now() + 300000);
 
         await pool.query(
             'UPDATE users SET reset_token = ?, reset_token_expires_at = ? WHERE email = ?',
             [resetCode, expiresAt, email]
         );
 
-        // Lógica de envio de e-mail com o Nodemailer (NOVO)
         const mailOptions = {
             from: process.env.EMAIL_USER,
             to: email,
@@ -219,7 +212,6 @@ app.post('/api/forgot-password', async (req, res) => {
         transporter.sendMail(mailOptions, (error, info) => {
             if (error) {
                 console.error('Erro ao enviar e-mail:', error);
-                // Pode retornar um erro para o front-end, mas não expor o erro exato
                 return res.status(500).send('Erro ao enviar o e-mail de redefinição.');
             }
             console.log('E-mail enviado:', info.response);
@@ -282,7 +274,7 @@ app.post('/api/create_preference', isAuthenticated, async (req, res) => {
                     failure: `${req.protocol}://${req.get('host')}/assinatura-status.html?status=failure`,
                     pending: `${req.protocol}://${req.get('host')}/assinatura-status.html?status=pending`
                 },
-                notification_url: `${req.protocol}://${req.get('host')}/api/payment_notification?source_code_id=${req.session.user.id}`,
+                notification_url: `${req.protocol}://${req.get('host')}/api/payment_notification`,
                 auto_return: "approved",
             }
         });
