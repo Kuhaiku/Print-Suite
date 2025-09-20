@@ -176,29 +176,28 @@ app.get('/api/check-session', (req, res) => {
     }
 });
 
+// Rotas de redefinição de senha por CÓDIGO (NOVO!)
 app.post('/api/forgot-password', async (req, res) => {
     const { email } = req.body;
     try {
         const [users] = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
         const user = users[0];
-
         if (!user) {
             return res.status(404).send('Usuário não encontrado.');
         }
 
-        const resetToken = crypto.randomBytes(32).toString('hex');
-        const expiresAt = new Date(Date.now() + 3600000);
+        const resetCode = Math.floor(100000 + Math.random() * 900000).toString(); // Código de 6 dígitos
+        const expiresAt = new Date(Date.now() + 300000); // Válido por 5 minutos
 
         await pool.query(
             'UPDATE users SET reset_token = ?, reset_token_expires_at = ? WHERE email = ?',
-            [resetToken, expiresAt, email]
+            [resetCode, expiresAt, email]
         );
 
-        const resetUrl = `${req.protocol}://${req.get('host')}/auth/reset-password.html?token=${resetToken}`;
+        // Simulação de envio de e-mail com o código
+        console.log(`CÓDIGO DE REDEFINIÇÃO DE SENHA para ${email}: ${resetCode}`);
         
-        console.log(`Link de redefinição de senha para ${email}: ${resetUrl}`);
-        
-        res.status(200).send('Um link de redefinição de senha foi enviado para seu email.');
+        res.status(200).send('Um código de redefinição foi enviado para seu email.');
 
     } catch (error) {
         console.error('Erro na solicitação de redefinição:', error);
@@ -207,20 +206,19 @@ app.post('/api/forgot-password', async (req, res) => {
 });
 
 app.post('/api/reset-password', async (req, res) => {
-    const { token, newPassword } = req.body;
+    const { email, code, newPassword } = req.body;
     try {
         const [users] = await pool.query(
-            'SELECT * FROM users WHERE reset_token = ? AND reset_token_expires_at > NOW()',
-            [token]
+            'SELECT * FROM users WHERE email = ? AND reset_token = ? AND reset_token_expires_at > NOW()',
+            [email, code]
         );
         const user = users[0];
 
         if (!user) {
-            return res.status(400).send('Token inválido ou expirado.');
+            return res.status(400).send('Código inválido ou expirado.');
         }
 
         const newHashedPassword = await bcrypt.hash(newPassword, 10);
-
         await pool.query(
             'UPDATE users SET password = ?, reset_token = NULL, reset_token_expires_at = NULL WHERE id = ?',
             [newHashedPassword, user.id]
@@ -233,6 +231,7 @@ app.post('/api/reset-password', async (req, res) => {
         res.status(500).send('Erro interno do servidor.');
     }
 });
+
 
 app.post('/api/create_preference', isAuthenticated, async (req, res) => {
     try {
