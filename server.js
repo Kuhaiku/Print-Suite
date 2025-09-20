@@ -1,9 +1,10 @@
+// 1. Importação dos Módulos
 const express = require('express');
 const path = require('path');
 const session = require('express-session');
 const bcrypt = require('bcrypt');
 const mysql = require('mysql2/promise');
-const mercadopago = require('mercadopago');
+const { MercadoPagoConfig, Preference, Payment } = require('mercadopago'); // NOVO: Importe as classes
 require('dotenv').config({ path: '.env.development' });
 
 const app = express();
@@ -50,9 +51,10 @@ async function createUsersTable() {
 
 connectToDatabase();
 
-// Configuração do Mercado Pago
-mercadopago.configure({
-    access_token: process.env.MP_ACCESS_TOKEN
+// 2. Configuração do Mercado Pago (CORRIGIDO)
+// Use a nova sintaxe para inicializar o SDK
+const client = new MercadoPagoConfig({
+    accessToken: process.env.MP_ACCESS_TOKEN
 });
 
 // Middlewares
@@ -65,7 +67,7 @@ app.use(session({
     cookie: { secure: 'auto' }
 }));
 
-// Middleware de Autenticação e Autorização (NOVO!)
+// Middleware de Autenticação e Autorização
 const isAuthenticated = (req, res, next) => {
     if (req.session.user) {
         next();
@@ -175,48 +177,53 @@ app.get('/api/check-session', (req, res) => {
     }
 });
 
-// Rota de criação de preferência (Checkout) do Mercado Pago
+// Rota de criação de preferência (Checkout) do Mercado Pago (CORRIGIDO)
 app.post('/api/create_preference', isAuthenticated, async (req, res) => {
     try {
         const { email } = req.session.user;
 
-        const preference = {
-            items: [
-                {
-                    title: "Assinatura Mensal Print Suite",
-                    unit_price: 29.90,
-                    quantity: 1,
-                }
-            ],
-            payer: {
-                email: email
-            },
-            back_urls: {
-                success: `${req.protocol}://${req.get('host')}/assinatura-status.html?status=success`,
-                failure: `${req.protocol}://${req.get('host')}/assinatura-status.html?status=failure`,
-                pending: `${req.protocol}://${req.get('host')}/assinatura-status.html?status=pending`
-            },
-            notification_url: `${req.protocol}://${req.get('host')}/api/payment_notification?source_code_id=${req.session.user.id}`, // Usar ID do usuário para vincular a notificação
-            auto_return: "approved",
-        };
+        const preference = new Preference(client);
+        
+        const result = await preference.create({
+            body: {
+                items: [
+                    {
+                        title: "Assinatura Mensal Print Suite",
+                        unit_price: 29.90,
+                        quantity: 1,
+                    }
+                ],
+                payer: {
+                    email: email
+                },
+                back_urls: {
+                    success: `${req.protocol}://${req.get('host')}/assinatura-status.html?status=success`,
+                    failure: `${req.protocol}://${req.get('host')}/assinatura-status.html?status=failure`,
+                    pending: `${req.protocol}://${req.get('host')}/assinatura-status.html?status=pending`
+                },
+                notification_url: `${req.protocol}://${req.get('host')}/api/payment_notification?source_code_id=${req.session.user.id}`,
+                auto_return: "approved",
+            }
+        });
 
-        const result = await mercadopago.preferences.create(preference);
-        res.status(200).json({ url: result.body.init_point });
+        res.status(200).json({ url: result.init_point });
     } catch (error) {
         console.error('Erro ao criar a preferência de pagamento:', error);
         res.status(500).json({ error: 'Erro ao processar a solicitação de pagamento.' });
     }
 });
 
-// Webhook de notificação do Mercado Pago
+// Webhook de notificação do Mercado Pago (CORRIGIDO)
 app.post('/api/payment_notification', async (req, res) => {
     const topic = req.query.topic || req.body.topic;
     if (topic === 'payment') {
         const paymentId = req.body.data.id;
         try {
-            const payment = await mercadopago.payment.findById(paymentId);
-            if (payment.body.status === 'approved') {
-                const userEmail = payment.body.payer.email;
+            const paymentClient = new Payment(client);
+            const payment = await paymentClient.findById(paymentId);
+            
+            if (payment.status === 'approved') {
+                const userEmail = payment.payer.email;
                 await pool.query('UPDATE users SET assinatura_ativa = TRUE WHERE email = ?', [userEmail]);
                 console.log(`Assinatura ativada para o usuário: ${userEmail}`);
             }
