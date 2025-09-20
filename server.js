@@ -1,10 +1,10 @@
-// 1. Importação dos Módulos
 const express = require('express');
 const path = require('path');
 const session = require('express-session');
 const bcrypt = require('bcrypt');
 const mysql = require('mysql2/promise');
-const { MercadoPagoConfig, Preference, Payment } = require('mercadopago'); // NOVO: Importe as classes
+const { MercadoPagoConfig, Preference, Payment } = require('mercadopago');
+const crypto = require('crypto'); // NOVO: Módulo para gerar tokens
 require('dotenv').config({ path: '.env.development' });
 
 const app = express();
@@ -38,7 +38,9 @@ async function createUsersTable() {
             email VARCHAR(255) UNIQUE NOT NULL,
             password VARCHAR(255) NOT NULL,
             assinatura_ativa BOOLEAN DEFAULT FALSE,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            reset_token VARCHAR(255),
+            reset_token_expires_at DATETIME
         );
     `;
     try {
@@ -51,8 +53,6 @@ async function createUsersTable() {
 
 connectToDatabase();
 
-// 2. Configuração do Mercado Pago (CORRIGIDO)
-// Use a nova sintaxe para inicializar o SDK
 const client = new MercadoPagoConfig({
     accessToken: process.env.MP_ACCESS_TOKEN
 });
@@ -67,7 +67,6 @@ app.use(session({
     cookie: { secure: 'auto' }
 }));
 
-// Middleware de Autenticação e Autorização
 const isAuthenticated = (req, res, next) => {
     if (req.session.user) {
         next();
@@ -177,7 +176,70 @@ app.get('/api/check-session', (req, res) => {
     }
 });
 
-// Rota de criação de preferência (Checkout) do Mercado Pago (CORRIGIDO)
+// NOVO: Rota para solicitar redefinição de senha
+app.post('/api/forgot-password', async (req, res) => {
+    const { email } = req.body;
+    try {
+        const [users] = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
+        const user = users[0];
+
+        if (!user) {
+            return res.status(404).send('Usuário não encontrado.');
+        }
+
+        const resetToken = crypto.randomBytes(32).toString('hex');
+        const expiresAt = new Date(Date.now() + 3600000); // Token válido por 1 hora
+
+        await pool.query(
+            'UPDATE users SET reset_token = ?, reset_token_expires_at = ? WHERE email = ?',
+            [resetToken, expiresAt, email]
+        );
+
+        const resetUrl = `${req.protocol}://${req.get('host')}/auth/reset-password.html?token=${resetToken}`;
+        
+        // Simulação de envio de email
+        console.log(`Link de redefinição de senha para ${email}: ${resetUrl}`);
+        // Em produção, você usaria uma biblioteca de email para enviar o link
+        // Ex: nodemailer.sendMail(...)
+
+        res.status(200).send('Um link de redefinição de senha foi enviado para seu email.');
+
+    } catch (error) {
+        console.error('Erro na solicitação de redefinição:', error);
+        res.status(500).send('Erro interno do servidor.');
+    }
+});
+
+// NOVO: Rota para redefinir a senha
+app.post('/api/reset-password', async (req, res) => {
+    const { token, newPassword } = req.body;
+    try {
+        const [users] = await pool.query(
+            'SELECT * FROM users WHERE reset_token = ? AND reset_token_expires_at > NOW()',
+            [token]
+        );
+        const user = users[0];
+
+        if (!user) {
+            return res.status(400).send('Token inválido ou expirado.');
+        }
+
+        const newHashedPassword = await bcrypt.hash(newPassword, 10);
+
+        await pool.query(
+            'UPDATE users SET password = ?, reset_token = NULL, reset_token_expires_at = NULL WHERE id = ?',
+            [newHashedPassword, user.id]
+        );
+
+        res.status(200).send('Senha redefinida com sucesso.');
+
+    } catch (error) {
+        console.error('Erro ao redefinir a senha:', error);
+        res.status(500).send('Erro interno do servidor.');
+    }
+});
+
+// Rota de criação de preferência (Checkout) do Mercado Pago
 app.post('/api/create_preference', isAuthenticated, async (req, res) => {
     try {
         const { email } = req.session.user;
@@ -213,7 +275,7 @@ app.post('/api/create_preference', isAuthenticated, async (req, res) => {
     }
 });
 
-// Webhook de notificação do Mercado Pago (CORRIGIDO)
+// Webhook de notificação do Mercado Pago
 app.post('/api/payment_notification', async (req, res) => {
     const topic = req.query.topic || req.body.topic;
     if (topic === 'payment') {
