@@ -4,7 +4,7 @@ const session = require('express-session');
 const bcrypt = require('bcrypt');
 const mysql = require('mysql2/promise');
 const { MercadoPagoConfig, Preference, Payment } = require('mercadopago');
-const crypto = require('crypto'); // NOVO: Módulo para gerar tokens
+const crypto = require('crypto');
 require('dotenv').config({ path: '.env.development' });
 
 const app = express();
@@ -107,7 +107,7 @@ app.get('/tools/mosaico.html', isAuthenticated, hasActiveSubscription, (req, res
     res.sendFile(path.join(__dirname, 'public/tools/mosaico.html'));
 });
 
-// Rotas Estáticas (Protegida após a validação de ferramentas)
+// Rotas Estáticas
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Rotas de API
@@ -176,7 +176,6 @@ app.get('/api/check-session', (req, res) => {
     }
 });
 
-// NOVO: Rota para solicitar redefinição de senha
 app.post('/api/forgot-password', async (req, res) => {
     const { email } = req.body;
     try {
@@ -188,7 +187,7 @@ app.post('/api/forgot-password', async (req, res) => {
         }
 
         const resetToken = crypto.randomBytes(32).toString('hex');
-        const expiresAt = new Date(Date.now() + 3600000); // Token válido por 1 hora
+        const expiresAt = new Date(Date.now() + 3600000);
 
         await pool.query(
             'UPDATE users SET reset_token = ?, reset_token_expires_at = ? WHERE email = ?',
@@ -197,11 +196,8 @@ app.post('/api/forgot-password', async (req, res) => {
 
         const resetUrl = `${req.protocol}://${req.get('host')}/auth/reset-password.html?token=${resetToken}`;
         
-        // Simulação de envio de email
         console.log(`Link de redefinição de senha para ${email}: ${resetUrl}`);
-        // Em produção, você usaria uma biblioteca de email para enviar o link
-        // Ex: nodemailer.sendMail(...)
-
+        
         res.status(200).send('Um link de redefinição de senha foi enviado para seu email.');
 
     } catch (error) {
@@ -210,7 +206,6 @@ app.post('/api/forgot-password', async (req, res) => {
     }
 });
 
-// NOVO: Rota para redefinir a senha
 app.post('/api/reset-password', async (req, res) => {
     const { token, newPassword } = req.body;
     try {
@@ -239,11 +234,9 @@ app.post('/api/reset-password', async (req, res) => {
     }
 });
 
-// Rota de criação de preferência (Checkout) do Mercado Pago
 app.post('/api/create_preference', isAuthenticated, async (req, res) => {
     try {
         const { email } = req.session.user;
-
         const preference = new Preference(client);
         
         const result = await preference.create({
@@ -275,7 +268,6 @@ app.post('/api/create_preference', isAuthenticated, async (req, res) => {
     }
 });
 
-// Webhook de notificação do Mercado Pago
 app.post('/api/payment_notification', async (req, res) => {
     const topic = req.query.topic || req.body.topic;
     if (topic === 'payment') {
@@ -298,7 +290,6 @@ app.post('/api/payment_notification', async (req, res) => {
     res.status(200).send('OK');
 });
 
-// Rota principal com controle de autenticação
 app.get('/', (req, res) => {
     if (req.session.user) {
         res.sendFile(path.join(__dirname, 'public/index.html'));
