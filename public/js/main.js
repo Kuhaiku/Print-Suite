@@ -1,5 +1,10 @@
 document.addEventListener('DOMContentLoaded', async () => {
     const authButtonsContainer = document.getElementById('auth-buttons');
+    if (!authButtonsContainer) {
+        // Se o elemento não existe, saia da função para evitar o erro.
+        return;
+    }
+
     try {
         const response = await fetch('/api/check-session');
         const data = await response.json();
