@@ -177,7 +177,7 @@ app.get('/api/check-session', (req, res) => {
     if (req.session.user) {
         res.status(200).json({ loggedIn: true });
     } else {
-        res.status(401).json({ loggedIn: false });
+        res.status(200).json({ loggedIn: false });
     }
 });
 
