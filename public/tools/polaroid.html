@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Criador de Polaroid</title>
     <link rel="stylesheet" href="/css/global.css">
-    <!-- <link rel="stylesheet" href="/css/polaroid.css"> -->
     <link rel="stylesheet" href="/css/tools.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css">
 </head>
@@ -36,7 +35,10 @@
         <div class="image-crop-container">
             <img id="modal-image" style="max-width: 100%;">
         </div>
-        <button id="crop-button" class="action-button">Ajustar e Adicionar</button>
+        <div class="modal-buttons">
+            <button id="crop-button" class="action-button">Ajustar e Adicionar</button>
+            <button id="remove-button" class="action-button remove-button">Remover Foto</button>
+        </div>
       </div>
     </div>
     

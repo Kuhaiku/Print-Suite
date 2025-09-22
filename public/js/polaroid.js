@@ -6,6 +6,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const modalImage = document.getElementById('modal-image');
     const cropButton = document.getElementById('crop-button');
     const closeButton = document.querySelector('.close-button');
+    const removeButton = document.getElementById('remove-button');
 
     let currentPage;
     let photoCount = 0;
@@ -19,17 +20,29 @@ document.addEventListener("DOMContentLoaded", () => {
 
     fileInput.addEventListener("change", handleFiles);
     saveBtn.addEventListener("click", saveAsImage);
-    closeButton.addEventListener("click", () => modal.style.display = "none");
+    closeButton.addEventListener("click", () => {
+        modal.style.display = "none";
+        if (cropper) cropper.destroy();
+        currentPolaroidToEdit = null;
+    });
     cropButton.addEventListener("click", handleCrop);
+    removeButton.addEventListener("click", handleRemove);
 
     function handleFiles(event) {
         const files = event.target.files;
         for (let i = 0; i < files.length; i++) {
-            photoQueue.push(URL.createObjectURL(files[i]));
-            if (photoCount % photosPerPage === 0) createNewPage();
-            addPolaroid({ src: URL.createObjectURL(files[i]) });
-            photoCount++;
+            const file = files[i];
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const imageData = { src: e.target.result };
+                photoQueue.push(imageData);
+                if (photoCount % photosPerPage === 0) createNewPage();
+                addPolaroid(imageData);
+                photoCount++;
+            };
+            reader.readAsDataURL(file);
         }
+        fileInput.value = '';
     }
 
     function createNewPage() {
@@ -47,7 +60,7 @@ document.addEventListener("DOMContentLoaded", () => {
         
         const img = document.createElement("img");
         img.src = imageData.src;
-        img.dataset.imageData = imageData.src; // Salva o caminho original
+        img.dataset.imageData = imageData.src;
         
         img.addEventListener('click', () => {
             currentPolaroidToEdit = polaroid;
@@ -57,9 +70,8 @@ document.addEventListener("DOMContentLoaded", () => {
         imageContainer.appendChild(img);
         polaroid.appendChild(imageContainer);
 
-        const caption = document.createElement("input");
-        caption.type = "text";
-        caption.placeholder = "";
+        const caption = document.createElement("textarea");
+        caption.placeholder = "Sua legenda aqui...";
         caption.classList.add("polaroid-caption");
         polaroid.appendChild(caption);
 
@@ -82,29 +94,35 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function handleCrop() {
-        if (!cropper) return;
+        if (!cropper || !currentPolaroidToEdit) return;
         
         const croppedCanvas = cropper.getCroppedCanvas();
         const imageDataUrl = croppedCanvas.toDataURL();
         
-        if (currentPolaroidToEdit) {
-            const imgToUpdate = currentPolaroidToEdit.querySelector('img');
-            imgToUpdate.src = imageDataUrl;
-            imgToUpdate.dataset.imageData = imageDataUrl;
-        }
+        const imgToUpdate = currentPolaroidToEdit.querySelector('img');
+        imgToUpdate.src = imageDataUrl;
+        imgToUpdate.dataset.imageData = imageDataUrl;
         
         modal.style.display = 'none';
+        if (cropper) cropper.destroy();
         currentPolaroidToEdit = null;
     }
 
-    // A lógica de `saveAsImage` permanece a mesma da nossa última versão corrigida
+    function handleRemove() {
+        if (currentPolaroidToEdit) {
+            currentPolaroidToEdit.remove();
+            modal.style.display = 'none';
+            if (cropper) cropper.destroy();
+            currentPolaroidToEdit = null;
+        }
+    }
+
     function saveAsImage() {
-        // ... (o código de salvamento em alta resolução que já corrigimos vai aqui) ...
         const pages = document.querySelectorAll(".a4-page");
         pages.forEach((page, index) => {
-            html2canvas(page).then(canvas => {
+            html2canvas(page, { scale: 2 }).then(canvas => {
                 const link = document.createElement("a");
-                link.download = `pagina_${index + 1}.png`;
+                link.download = `pagina_polaroid_${index + 1}.png`;
                 link.href = canvas.toDataURL("image/png");
                 link.click();
             });
