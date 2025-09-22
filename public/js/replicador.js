@@ -9,6 +9,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const nextPageButton = document.getElementById('next-page');
     const pageInfo = document.getElementById('page-info');
     const downloadButton = document.getElementById('download-button');
+    const calculatorDisplay = document.getElementById('calculator-display');
+    const calculatorResult = document.getElementById('result');
 
     const modal = document.getElementById('modal');
     const modalImage = document.getElementById('modal-image');
@@ -76,6 +78,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const fileInput = cardDiv.querySelector('.image-upload');
         const previewDiv = cardDiv.querySelector('.image-preview');
         const removeButton = cardDiv.querySelector('.remove-image-button');
+        const widthInput = cardDiv.querySelector('.image-width-mm');
+        const heightInput = cardDiv.querySelector('.image-height-mm');
+        const marginInput = cardDiv.querySelector('.image-margin-mm');
+
+        const updateHandler = () => updateCalculator();
+        widthInput.addEventListener('input', updateHandler);
+        heightInput.addEventListener('input', updateHandler);
+        marginInput.addEventListener('input', updateHandler);
 
         previewDiv.addEventListener('click', () => {
             if (previewDiv.querySelector('img')) {
@@ -112,6 +122,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         removeButton.addEventListener('click', () => {
             cardDiv.remove();
+            updateCalculator();
         });
     }
 
@@ -146,6 +157,40 @@ document.addEventListener('DOMContentLoaded', () => {
         if (cropper) cropper.destroy();
         currentCardToEdit = null;
     });
+
+    // Função de cálculo de espaço
+    function updateCalculator() {
+        const paper = paperSizesMm[paperSizeSelect.value];
+        const imageCards = document.querySelectorAll('.image-card');
+
+        if (imageCards.length === 0) {
+            calculatorResult.innerHTML = '<p>Nenhuma imagem para calcular.</p>';
+            return;
+        }
+
+        const firstCard = imageCards[0];
+        const imgWidthMm = parseFloat(firstCard.querySelector('.image-width-mm').value);
+        const imgHeightMm = parseFloat(firstCard.querySelector('.image-height-mm').value);
+        const imgMarginMm = parseFloat(firstCard.querySelector('.image-margin-mm').value);
+
+        if (isNaN(imgWidthMm) || isNaN(imgHeightMm) || imgWidthMm <= 0 || imgHeightMm <= 0 || isNaN(imgMarginMm) || imgMarginMm < 0) {
+            calculatorResult.innerHTML = '<p>Insira valores válidos para calcular.</p>';
+            return;
+        }
+
+        const horizontalCount = Math.floor(paper.width / (imgWidthMm + imgMarginMm));
+        const verticalCount = Math.floor(paper.height / (imgHeightMm + imgMarginMm));
+        const totalPerSheet = horizontalCount * verticalCount;
+
+        calculatorResult.innerHTML = `
+            <p><strong>Largura útil:</strong> ${paper.width} mm</p>
+            <p><strong>Altura útil:</strong> ${paper.height} mm</p>
+            <p><strong>Total por folha:</strong> ${totalPerSheet} item(s)</p>
+        `;
+    }
+
+    // Listener para o seletor de papel
+    paperSizeSelect.addEventListener('change', updateCalculator);
 
     addImageCard();
     addImageButton.addEventListener('click', addImageCard);
@@ -307,4 +352,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
     });
+
+    // Inicia a calculadora ao carregar a página
+    updateCalculator();
 });
