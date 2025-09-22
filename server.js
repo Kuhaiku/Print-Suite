@@ -191,7 +191,7 @@ app.post('/api/forgot-password', async (req, res) => {
         }
 
         const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
-        const expiresAt = new Date(Date.now() + 300000);
+        const expiresAt = new Date(Date.now() + 86400000); // 24 horas em milissegundos
 
         await pool.query(
             'UPDATE users SET reset_token = ?, reset_token_expires_at = ? WHERE email = ?',
