@@ -178,14 +178,19 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        const horizontalCount = Math.floor(paper.width / (imgWidthMm + imgMarginMm));
-        const verticalCount = Math.floor(paper.height / (imgHeightMm + imgMarginMm));
+        const itemWidthWithMargin = imgWidthMm + imgMarginMm;
+        const itemHeightWithMargin = imgHeightMm + imgMarginMm;
+
+        // Calcula a quantidade máxima que cabe, garantindo que o último item caiba
+        const horizontalCount = Math.floor((paper.width + imgMarginMm) / itemWidthWithMargin);
+        const verticalCount = Math.floor((paper.height + imgMarginMm) / itemHeightWithMargin);
+        
         const totalPerSheet = horizontalCount * verticalCount;
 
         calculatorResult.innerHTML = `
             <p><strong>Largura útil:</strong> ${paper.width} mm</p>
             <p><strong>Altura útil:</strong> ${paper.height} mm</p>
-            <p><strong>Total por folha:</strong> ${totalPerSheet} item(s)</p>
+            <p><strong>Total por folha (Item 1):</strong> ${totalPerSheet} item(s)</p>
         `;
     }
 
@@ -205,6 +210,38 @@ document.addEventListener('DOMContentLoaded', () => {
         const paper = paperSizesMm[paperSizeSelect.value];
         const paperPx = { width: mmToPx(paper.width), height: mmToPx(paper.height) };
 
+        // --- INÍCIO DA MODIFICAÇÃO PARA CENTRALIZAÇÃO ---
+        const firstCard = imageCards[0];
+        const imgWidthMm_First = parseFloat(firstCard.querySelector('.image-width-mm').value);
+        const imgHeightMm_First = parseFloat(firstCard.querySelector('.image-height-mm').value);
+        const imgMarginMm_First = parseFloat(firstCard.querySelector('.image-margin-mm').value);
+
+        if (isNaN(imgWidthMm_First) || isNaN(imgHeightMm_First) || imgWidthMm_First <= 0 || imgHeightMm_First <= 0 || isNaN(imgMarginMm_First) || imgMarginMm_First < 0) {
+             alert('Por favor, preencha os campos de Largura, Altura e Margem do primeiro cartão corretamente para calcular o layout.');
+            return;
+        }
+
+        const imgWidthPx_First = mmToPx(imgWidthMm_First);
+        const imgHeightPx_First = mmToPx(imgHeightMm_First);
+        const imgMarginPx_First = mmToPx(imgMarginMm_First);
+
+        // Calcula o número máximo de itens que cabem horizontal e verticalmente (incluindo a margem)
+        const itemWidthWithMargin_First = imgWidthMm_First + imgMarginMm_First;
+        const itemHeightWithMargin_First = imgHeightMm_First + imgMarginMm_First;
+        
+        const horizontalCountMax = Math.floor((paper.width + imgMarginMm_First) / itemWidthWithMargin_First);
+        const verticalCountMax = Math.floor((paper.height + imgMarginMm_First) / itemHeightWithMargin_First);
+        
+        // Largura total ocupada pelo bloco de imagens (largura total da grade)
+        const totalUsedWidth = horizontalCountMax * imgWidthPx_First + (horizontalCountMax - 1) * imgMarginPx_First;
+        const totalUsedHeight = verticalCountMax * imgHeightPx_First + (verticalCountMax - 1) * imgMarginPx_First;
+        
+        // Offset de centralização
+        const offsetX = Math.max(0, (paperPx.width - totalUsedWidth) / 2);
+        const offsetY = Math.max(0, (paperPx.height - totalUsedHeight) / 2);
+        // --- FIM DA MODIFICAÇÃO PARA CENTRALIZAÇÃO ---
+
+
         finalCanvases = [];
         let currentCanvas = document.createElement('canvas');
         currentCanvas.width = paperPx.width;
@@ -212,9 +249,12 @@ document.addEventListener('DOMContentLoaded', () => {
         let ctx = currentCanvas.getContext('2d');
         ctx.fillStyle = '#FFFFFF';
         ctx.fillRect(0, 0, currentCanvas.width, currentCanvas.height);
+        finalCanvases.push(currentCanvas);
 
-        let currentX = 0;
-        let currentY = 0;
+
+        // Inicializa a posição com o offset de centralização
+        let currentX = offsetX;
+        let currentY = offsetY;
         let maxHeightInRow = 0;
 
         for (const card of imageCards) {
@@ -249,22 +289,26 @@ document.addEventListener('DOMContentLoaded', () => {
             const imgMarginPx = mmToPx(imgMarginMm);
 
             for (let i = 0; i < imgCount; i++) {
+                
+                // Quebra de linha: se o próximo item ultrapassar a borda direita
                 if (currentX + imgWidthPx > paperPx.width) {
-                    currentX = 0;
+                    currentX = offsetX; // Reset para a posição X inicial centralizada
                     currentY += maxHeightInRow + imgMarginPx;
                     maxHeightInRow = 0;
                 }
                 
+                // Quebra de página: se o item atual ultrapassar a borda inferior
                 if (currentY + imgHeightPx > paperPx.height) {
-                    finalCanvases.push(currentCanvas);
                     currentCanvas = document.createElement('canvas');
                     currentCanvas.width = paperPx.width;
                     currentCanvas.height = paperPx.height;
                     ctx = currentCanvas.getContext('2d');
                     ctx.fillStyle = '#FFFFFF';
                     ctx.fillRect(0, 0, currentCanvas.width, currentCanvas.height);
-                    currentX = 0;
-                    currentY = 0;
+                    finalCanvases.push(currentCanvas);
+                    
+                    currentX = offsetX; // Reset X para o offset
+                    currentY = offsetY; // Reset Y para o offset
                     maxHeightInRow = 0;
                 }
 
@@ -295,8 +339,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 maxHeightInRow = Math.max(maxHeightInRow, imgHeightPx);
             }
         }
-        
-        finalCanvases.push(currentCanvas);
         
         displayCurrentPage();
         paginationControls.style.display = finalCanvases.length > 1 ? 'flex' : 'none';
