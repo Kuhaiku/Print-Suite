@@ -41,6 +41,10 @@
                         <input type="radio" name="division-method" value="by-grid">
                         Por Colunas e Linhas
                     </label>
+                    <label>
+                        <input type="radio" name="division-method" value="by-piece">
+                        Por Pedaço (cm)
+                    </label>
                 </div>
             </div>
 
@@ -64,6 +68,16 @@
                 </div>
                 <div id="estimated-dimensions">
                     <p>Dimensões estimadas: <span id="final-width-display">0</span> cm x <span id="final-height-display">0</span> cm</p>
+                </div>
+            </div>
+
+            <div class="controls-card" id="division-by-piece" style="display:none;">
+                <h2>3. Tamanho do Pedaço</h2>
+                <div class="options-group">
+                    <label for="piece-width">Largura (cm):</label>
+                    <input type="number" id="piece-width" placeholder="Ex: 8" min="1">
+                    <label for="piece-height">Altura (cm):</label>
+                    <input type="number" id="piece-height" placeholder="Ex: 8" min="1">
                 </div>
             </div>
 
