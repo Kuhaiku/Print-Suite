@@ -16,10 +16,13 @@ document.addEventListener('DOMContentLoaded', () => {
         DOM.divisionMethodRadios = document.querySelectorAll('input[name="division-method"]');
         DOM.divisionBySizeSection = document.getElementById('division-by-size');
         DOM.divisionByGridSection = document.getElementById('division-by-grid');
+        DOM.divisionByPieceSection = document.getElementById('division-by-piece'); // Novo
         DOM.finalWidthInput = document.getElementById('final-width');
         DOM.finalHeightInput = document.getElementById('final-height');
         DOM.gridColsInput = document.getElementById('grid-cols');
         DOM.gridRowsInput = document.getElementById('grid-rows');
+        DOM.pieceWidthInput = document.getElementById('piece-width'); // Novo
+        DOM.pieceHeightInput = document.getElementById('piece-height'); // Novo
         DOM.paperSizeSelect = document.getElementById('paper-size');
         DOM.orientationSelect = document.getElementById('orientation');
         DOM.autoDpiCheckbox = document.getElementById('auto-dpi');
@@ -95,9 +98,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function calculateOptimalDpi(widthCm, heightCm) {
-        const maxDimensionPx = 20000; // Limite de 20.000 pixels para evitar problemas de memória
-        const minDpi = 72; // DPI mínimo para uma qualidade aceitável
-        const defaultDpi = 300; // DPI padrão para impressão
+        const maxDimensionPx = 20000;
+        const minDpi = 72;
+        const defaultDpi = 300;
 
         const mmToPx = (mm, dpi) => mm * dpi / 25.4;
         const widthPx = mmToPx(widthCm * 10, defaultDpi);
@@ -143,16 +146,31 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             cols = Math.ceil(finalWidthCm / paperWidthCm);
             rows = Math.ceil(finalHeightCm / paperHeightCm);
-        } else {
+        } else if (method === 'by-grid') {
             cols = parseInt(DOM.gridColsInput.value) || 1;
             rows = parseInt(DOM.gridRowsInput.value) || 1;
             finalWidthCm = cols * paperWidthCm;
             finalHeightCm = rows * paperHeightCm;
             DOM.finalWidthDisplay.textContent = finalWidthCm.toFixed(1);
             DOM.finalHeightDisplay.textContent = finalHeightCm.toFixed(1);
+        } else { // by-piece
+            const pieceWidthCm = parseFloat(DOM.pieceWidthInput.value);
+            const pieceHeightCm = parseFloat(DOM.pieceHeightInput.value);
+            if (isNaN(pieceWidthCm) || isNaN(pieceHeightCm) || pieceWidthCm <= 0 || pieceHeightCm <= 0) {
+                DOM.previewGrid.innerHTML = '<p>Defina o tamanho de cada pedaço corretamente.</p>';
+                DOM.saveButton.style.display = 'none';
+                return;
+            }
+            // A lógica aqui é diferente, o tamanho final é o da imagem cortada.
+            // A proporção da imagem cortada define as dimensões
+            const imageAspectRatio = croppedImage.width / croppedImage.height;
+            finalHeightCm = parseFloat(DOM.finalHeightInput.value) || 100; // Ou um valor padrão
+            finalWidthCm = finalHeightCm * imageAspectRatio;
+
+            cols = Math.ceil(finalWidthCm / pieceWidthCm);
+            rows = Math.ceil(finalHeightCm / pieceHeightCm);
         }
         
-        // Ajuste DPI dinâmico
         if (DOM.autoDpiCheckbox.checked) {
             const optimalDpi = calculateOptimalDpi(finalWidthCm, finalHeightCm);
             DOM.dpiInput.value = optimalDpi;
@@ -177,13 +195,13 @@ document.addEventListener('DOMContentLoaded', () => {
         for (let i = 1; i < cols; i++) {
             const line = document.createElement('div');
             line.classList.add('cut-line', 'vertical');
-            line.style.left = `${(i * paperWidthCm / finalWidthCm) * 100}%`;
+            line.style.left = `${(i / cols) * 100}%`;
             DOM.previewGrid.appendChild(line);
         }
         for (let i = 1; i < rows; i++) {
             const line = document.createElement('div');
             line.classList.add('cut-line', 'horizontal');
-            line.style.top = `${(i * paperHeightCm / finalHeightCm) * 100}%`;
+            line.style.top = `${(i / rows) * 100}%`;
             DOM.previewGrid.appendChild(line);
         }
         
@@ -200,8 +218,8 @@ document.addEventListener('DOMContentLoaded', () => {
         
         let paperWidthCm = paperSizesCm[paperSize].width;
         let paperHeightCm = paperSizesCm[paperSize].height;
-        let finalWidthCm, finalHeightCm, cols, rows;
-        
+        let finalWidthCm, finalHeightCm, cols, rows, pieceWidthCm, pieceHeightCm;
+
         if (orientation === 'landscape') {
             [paperWidthCm, paperHeightCm] = [paperHeightCm, paperWidthCm];
         }
@@ -215,7 +233,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             cols = Math.ceil(finalWidthCm / paperWidthCm);
             rows = Math.ceil(finalHeightCm / paperHeightCm);
-        } else {
+            pieceWidthCm = paperWidthCm;
+            pieceHeightCm = paperHeightCm;
+        } else if (method === 'by-grid') {
             cols = parseInt(DOM.gridColsInput.value) || 1;
             rows = parseInt(DOM.gridRowsInput.value) || 1;
             if (isNaN(cols) || isNaN(rows) || cols <= 0 || rows <= 0) {
@@ -224,8 +244,24 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             finalWidthCm = cols * paperWidthCm;
             finalHeightCm = rows * paperHeightCm;
+            pieceWidthCm = paperWidthCm;
+            pieceHeightCm = paperHeightCm;
+        } else { // by-piece
+            pieceWidthCm = parseFloat(DOM.pieceWidthInput.value);
+            pieceHeightCm = parseFloat(DOM.pieceHeightInput.value);
+            if (isNaN(pieceWidthCm) || isNaN(pieceHeightCm) || pieceWidthCm <= 0 || pieceHeightCm <= 0) {
+                alert('Por favor, insira valores válidos para o tamanho do pedaço.');
+                return;
+            }
+
+            const imageAspectRatio = croppedImage.width / croppedImage.height;
+            finalHeightCm = parseFloat(DOM.finalHeightInput.value) || 100;
+            finalWidthCm = finalHeightCm * imageAspectRatio;
+
+            cols = Math.floor(finalWidthCm / pieceWidthCm);
+            rows = Math.floor(finalHeightCm / pieceHeightCm);
         }
-        
+
         const mmToPx = (mm) => mm * dpi / 25.4;
 
         const zip = new JSZip();
@@ -233,17 +269,17 @@ document.addEventListener('DOMContentLoaded', () => {
         for (let r = 0; r < rows; r++) {
             for (let c = 0; c < cols; c++) {
                 const sliceCanvas = document.createElement('canvas');
-                const sliceWidthPx = mmToPx(paperWidthCm * 10);
-                const sliceHeightPx = mmToPx(paperHeightCm * 10);
+                const sliceWidthPx = mmToPx(pieceWidthCm * 10);
+                const sliceHeightPx = mmToPx(pieceHeightCm * 10);
 
                 sliceCanvas.width = sliceWidthPx;
                 sliceCanvas.height = sliceHeightPx;
                 const sliceCtx = sliceCanvas.getContext('2d');
                 
-                const sourceX = (c * paperWidthCm) / finalWidthCm * croppedImage.width;
-                const sourceY = (r * paperHeightCm) / finalHeightCm * croppedImage.height;
-                const sourceWidth = (paperWidthCm / finalWidthCm) * croppedImage.width;
-                const sourceHeight = (paperHeightCm / finalHeightCm) * croppedImage.height;
+                const sourceX = (c * pieceWidthCm) / finalWidthCm * croppedImage.width;
+                const sourceY = (r * pieceHeightCm) / finalHeightCm * croppedImage.height;
+                const sourceWidth = (pieceWidthCm / finalWidthCm) * croppedImage.width;
+                const sourceHeight = (pieceHeightCm / finalHeightCm) * croppedImage.height;
 
                 sliceCtx.drawImage(
                     croppedImage,
@@ -288,11 +324,12 @@ document.addEventListener('DOMContentLoaded', () => {
             radio.addEventListener('change', () => {
                 DOM.divisionBySizeSection.style.display = radio.value === 'by-size' ? 'block' : 'none';
                 DOM.divisionByGridSection.style.display = radio.value === 'by-grid' ? 'block' : 'none';
+                DOM.divisionByPieceSection.style.display = radio.value === 'by-piece' ? 'block' : 'none'; // Novo
                 calculateAndRenderPreview();
             });
         });
 
-        const inputElements = [DOM.finalWidthInput, DOM.finalHeightInput, DOM.gridColsInput, DOM.gridRowsInput, DOM.paperSizeSelect, DOM.orientationSelect, DOM.dpiInput];
+        const inputElements = [DOM.finalWidthInput, DOM.finalHeightInput, DOM.gridColsInput, DOM.gridRowsInput, DOM.pieceWidthInput, DOM.pieceHeightInput, DOM.paperSizeSelect, DOM.orientationSelect, DOM.dpiInput];
         inputElements.forEach(input => input.addEventListener('input', calculateAndRenderPreview));
     }
 
