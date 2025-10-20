@@ -240,8 +240,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const paperSize = DOM.paperSizeSelect.value;
             const orientation = DOM.orientationSelect.value;
             let paperWidthCm = paperSizesCm[paperSize].width;
+            let paperHeightCm = paperSizesCm[paperSize].height;
             if (orientation === 'landscape') {
-                paperWidthCm = paperSizesCm[paperSize].height;
+                [paperWidthCm, paperHeightCm] = [paperHeightCm, paperWidthCm];
             }
             cols = Math.ceil(finalWidthCm / paperWidthCm);
             rows = Math.ceil(finalHeightCm / paperHeightCm);
