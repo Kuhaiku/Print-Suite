@@ -7,6 +7,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const cropButton = document.getElementById('crop-button');
     const closeButton = document.querySelector('.close-button');
     const removeButton = document.getElementById('remove-button');
+    const rotateLeftButton = document.getElementById('rotate-left-button');
+    const rotateRightButton = document.getElementById('rotate-right-button');
 
     let photoQueue = [];
     const photosPerPage = 8;
@@ -26,6 +28,19 @@ document.addEventListener("DOMContentLoaded", () => {
     });
     cropButton.addEventListener("click", handleCrop);
     removeButton.addEventListener("click", handleRemove);
+
+    // Event Listeners para rotação
+    rotateLeftButton.addEventListener("click", () => {
+        if (cropper) {
+            cropper.rotate(-90);
+        }
+    });
+
+    rotateRightButton.addEventListener("click", () => {
+        if (cropper) {
+            cropper.rotate(90);
+        }
+    });
 
     function saveCaptions() {
         const polaroids = document.querySelectorAll('.polaroid');
