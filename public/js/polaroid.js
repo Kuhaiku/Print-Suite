@@ -14,7 +14,8 @@ document.addEventListener("DOMContentLoaded", () => {
     let currentPolaroidToEdit = null;
 
     // Dimensões em CM para o Cropper
-    const imageSizeCm = { width: 7.9, height: 7.9 };
+    // Ajustado para refletir a proporção visual de 1/1.2 (7.9 * 1.2 = 9.48)
+    const imageSizeCm = { width: 7.9, height: 9.48 };
 
     fileInput.addEventListener("change", handleFiles);
     saveBtn.addEventListener("click", saveAsImage);
@@ -156,6 +157,8 @@ document.addEventListener("DOMContentLoaded", () => {
             const originalSrc = photoQueue[originalIndex].src;
             const currentSrc = img.src;
             
+            // Recorta a imagem original se ela não tiver sido editada manualmente pelo cropper
+            // para garantir que a proporção correta seja salva na impressão
             if (originalSrc === currentSrc) {
                 const tempImage = new Image();
                 tempImage.src = originalSrc;
