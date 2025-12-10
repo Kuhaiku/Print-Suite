@@ -15,21 +15,25 @@ document.addEventListener("DOMContentLoaded", () => {
     let cropper;
     let currentPolaroidToEdit = null;
 
-    // Dimensões em CM para o Cropper
-    // Ajustado para refletir a proporção visual de 1/1.2 (7.9 * 1.2 = 9.48)
+    // Dimensões em CM para o Cropper (Proporção 1:1.2 visual)
     const imageSizeCm = { width: 7.9, height: 9.48 };
 
     fileInput.addEventListener("change", handleFiles);
     saveBtn.addEventListener("click", saveAsImage);
+    
     closeButton.addEventListener("click", () => {
         modal.style.display = "none";
-        if (cropper) cropper.destroy();
+        if (cropper) {
+            cropper.destroy();
+            cropper = null;
+        }
         currentPolaroidToEdit = null;
     });
+
     cropButton.addEventListener("click", handleCrop);
     removeButton.addEventListener("click", handleRemove);
 
-    // Event Listeners para rotação
+    // Listeners de Rotação
     rotateLeftButton.addEventListener("click", () => {
         if (cropper) {
             cropper.rotate(-90);
@@ -46,8 +50,9 @@ document.addEventListener("DOMContentLoaded", () => {
         const polaroids = document.querySelectorAll('.polaroid');
         polaroids.forEach((polaroid, index) => {
             const caption = polaroid.querySelector('textarea');
-            // Use o índice de dados para garantir que a legenda seja salva no lugar correto, mesmo após remoções.
-            const originalIndex = parseInt(polaroid.querySelector('img').dataset.originalIndex);
+            const img = polaroid.querySelector('img');
+            const originalIndex = parseInt(img.dataset.originalIndex);
+            
             if (caption && photoQueue[originalIndex]) {
                 photoQueue[originalIndex].caption = caption.value;
             }
@@ -112,9 +117,15 @@ document.addEventListener("DOMContentLoaded", () => {
     
     function openModal(imageSrc) {
         modal.style.display = 'block';
-        modalImage.src = imageSrc;
+        
+        // Limpa o cropper anterior se existir para evitar conflitos
+        if (cropper) {
+            cropper.destroy();
+            cropper = null;
+        }
+
+        // Importante: Definir o onload ANTES de definir o src
         modalImage.onload = () => {
-            if (cropper) cropper.destroy();
             cropper = new Cropper(modalImage, {
                 aspectRatio: imageSizeCm.width / imageSizeCm.height,
                 viewMode: 1,
@@ -123,11 +134,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 autoCropArea: 1,
             });
         };
+        
+        modalImage.src = imageSrc;
     }
 
     function handleCrop() {
         if (!cropper || !currentPolaroidToEdit) return;
         
+        // getCroppedCanvas já aplica a rotação automaticamente
         const croppedCanvas = cropper.getCroppedCanvas();
         const imageDataUrl = croppedCanvas.toDataURL();
         
@@ -140,7 +154,10 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         
         modal.style.display = 'none';
-        if (cropper) cropper.destroy();
+        if (cropper) {
+            cropper.destroy();
+            cropper = null;
+        }
         currentPolaroidToEdit = null;
     }
 
@@ -155,7 +172,10 @@ document.addEventListener("DOMContentLoaded", () => {
             }
             
             modal.style.display = 'none';
-            if (cropper) cropper.destroy();
+            if (cropper) {
+                cropper.destroy();
+                cropper = null;
+            }
             currentPolaroidToEdit = null;
             renderPolaroids();
         }
@@ -172,8 +192,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const originalSrc = photoQueue[originalIndex].src;
             const currentSrc = img.src;
             
-            // Recorta a imagem original se ela não tiver sido editada manualmente pelo cropper
-            // para garantir que a proporção correta seja salva na impressão
+            // Só aplica o corte manual se a imagem NÃO foi editada/rotacionada pelo usuário
             if (originalSrc === currentSrc) {
                 const tempImage = new Image();
                 tempImage.src = originalSrc;
