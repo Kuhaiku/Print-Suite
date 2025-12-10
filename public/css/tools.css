@@ -78,7 +78,7 @@
 
 .polaroid {
     width: 250px;
-    height: 300px;
+    height: 360px;
     background-color: #FFFFFF;
     border: 1px solid #ccc;
     box-shadow: none;
@@ -92,7 +92,7 @@
 
 .image-container {
     width: 100%;
-    aspect-ratio: 1 / 1;
+    aspect-ratio: 1 / 1.2;
     overflow: hidden;
     position: relative;
     border: 1px solid #adadad;
